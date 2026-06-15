@@ -43,6 +43,9 @@ cli
   .option('--rate-limit-ms <n>', 'minimum interval between mutation requests', {
     default: 0,
   })
+  .option('--request-timeout-ms <n>', 'request timeout in milliseconds', {
+    default: 30_000,
+  })
   .option('--dry-run', 'preview only')
   .option('--json', 'json output')
   .option('--silent', 'silent logs')
@@ -79,6 +82,9 @@ cli
   .command('revoke', 'revoke trusted publisher config by id')
   .option('--id <id>', 'trusted publisher config id')
   .action(async options => {
+    if (!options.id) {
+      throw new Error('revoke command requires --id')
+    }
     const config = await loadTrustedPublishConfig(cli.options)
     process.exitCode = await runRevoke(config, { id: options.id })
   })

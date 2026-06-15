@@ -59,4 +59,36 @@ describe('node api exports', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
     ws.cleanup()
   })
+
+  it('rejects invalid concurrency values', async () => {
+    const ws = createWorkspace()
+
+    await expect(
+      resolveTrustedPublishConfig({
+        cwd: ws.cwd,
+        provider: 'github',
+        repository: 'owner/repo',
+        workflow: 'release.yml',
+        concurrency: 0,
+      }),
+    ).rejects.toThrow('concurrency must be >= 1')
+
+    ws.cleanup()
+  })
+
+  it('rejects invalid registry url', async () => {
+    const ws = createWorkspace()
+
+    await expect(
+      resolveTrustedPublishConfig({
+        cwd: ws.cwd,
+        provider: 'github',
+        repository: 'owner/repo',
+        workflow: 'release.yml',
+        registry: 'not-a-url',
+      }),
+    ).rejects.toThrow('registry must be a valid URL')
+
+    ws.cleanup()
+  })
 })

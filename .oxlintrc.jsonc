@@ -30,7 +30,6 @@
     "no-plusplus": "off",
     "sort-keys": "off",
     "sort-imports": "off",
-    "no-duplicate-imports": "off",
     "no-continue": "off",
     "no-await-in-loop": "off",
     "require-await": "off",

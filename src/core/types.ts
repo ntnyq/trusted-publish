@@ -112,6 +112,7 @@ export interface ClaimsInput {
 export interface TrustedPublishConfig {
   cwd?: string
   registry: string
+  requestTimeoutMs: number
   provider: ProviderType
   package?: string
   include: string[]

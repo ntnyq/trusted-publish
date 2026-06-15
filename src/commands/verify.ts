@@ -5,8 +5,25 @@ import { createReporter, summarize } from '../core/reporter'
 import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
 import { runWithConcurrency } from '../core/utils'
 
+function normalizeStable(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeStable(item))
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).toSorted(
+      ([left], [right]) => left.localeCompare(right),
+    )
+    return Object.fromEntries(
+      entries.map(([key, item]) => [key, normalizeStable(item)]),
+    )
+  }
+
+  return value
+}
+
 function stableStringify(value: unknown): string {
-  return JSON.stringify(value, Object.keys(value as object).toSorted())
+  return JSON.stringify(normalizeStable(value))
 }
 
 /**
@@ -24,6 +41,7 @@ export async function runVerify(config: TrustedPublishConfig): Promise<number> {
   const reporter = createReporter(config)
   const client = new NpmTrustClient({
     registry: config.registry,
+    requestTimeoutMs: config.requestTimeoutMs,
     token: config.token,
     otp: config.otp,
     dryRun: config.dryRun,

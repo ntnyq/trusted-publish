@@ -76,18 +76,22 @@ async function discoverFromWorkspaces(
 
   const rootPkgPath = resolve(cwd, 'package.json')
   if (existsSync(rootPkgPath)) {
-    const raw = readFileSync(rootPkgPath, 'utf8')
-    const pkg = JSON.parse(raw) as {
-      workspaces?: string[] | { packages?: string[] }
-    }
-    if (Array.isArray(pkg.workspaces)) {
-      for (const item of pkg.workspaces) {
-        patterns.add(item)
+    try {
+      const raw = readFileSync(rootPkgPath, 'utf8')
+      const pkg = JSON.parse(raw) as {
+        workspaces?: string[] | { packages?: string[] }
       }
-    } else if (Array.isArray(pkg.workspaces?.packages)) {
-      for (const item of pkg.workspaces.packages) {
-        patterns.add(item)
+      if (Array.isArray(pkg.workspaces)) {
+        for (const item of pkg.workspaces) {
+          patterns.add(item)
+        }
+      } else if (Array.isArray(pkg.workspaces?.packages)) {
+        for (const item of pkg.workspaces.packages) {
+          patterns.add(item)
+        }
       }
+    } catch {
+      // Ignore malformed root package.json workspace metadata and continue.
     }
   }
 

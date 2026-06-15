@@ -30,6 +30,7 @@ export async function runRevoke(
   const reporter = createReporter(config)
   const client = new NpmTrustClient({
     registry: config.registry,
+    requestTimeoutMs: config.requestTimeoutMs,
     token: config.token,
     otp: config.otp,
     dryRun: config.dryRun,

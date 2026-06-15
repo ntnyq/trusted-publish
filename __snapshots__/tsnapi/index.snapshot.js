@@ -11,6 +11,7 @@ export class NpmTrustClient {
   async revoke(_, _) {}
   async request(_, _, _) {}
   async requestWithRetry(_, _) {}
+  async fetchWithTimeout(_, _) {}
   async waitForRateLimit(_) {}
   isRetryableStatus(_) {}
   getRetryAfterMs(_) {}

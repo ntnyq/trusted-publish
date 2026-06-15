@@ -16,6 +16,7 @@ export const DEFAULT_IGNORES = [
  */
 export const DEFAULT_CONFIG: TrustedPublishConfig = {
   registry: 'https://registry.npmjs.org',
+  requestTimeoutMs: 30_000,
   provider: 'github',
   include: [],
   exclude: [],

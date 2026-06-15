@@ -24,6 +24,7 @@ export interface LoadConfigInput {
   cwd?: string;
   config?: string;
   profile?: string;
+  requestTimeoutMs?: number | string;
   provider?: string;
   package?: string;
   include?: string | string[];
@@ -136,6 +137,7 @@ export interface TrustConfig {
 export interface TrustedPublishConfig {
   cwd?: string;
   registry: string;
+  requestTimeoutMs: number;
   provider: ProviderType;
   package?: string;
   include: string[];
@@ -179,6 +181,7 @@ export declare class NpmTrustClient {
   revoke(_: string, _: string): Promise<Response>;
   private request;
   private requestWithRetry;
+  private fetchWithTimeout;
   private waitForRateLimit;
   private isRetryableStatus;
   private getRetryAfterMs;

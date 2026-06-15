@@ -56,6 +56,7 @@ export function createTrustedPublishClient(
 ): NpmTrustClient {
   return new NpmTrustClient({
     registry: config.registry,
+    requestTimeoutMs: config.requestTimeoutMs,
     token: config.token,
     otp: config.otp,
     dryRun: config.dryRun,

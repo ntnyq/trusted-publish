@@ -19,6 +19,7 @@ export async function runList(config: TrustedPublishConfig): Promise<number> {
   const reporter = createReporter(config)
   const client = new NpmTrustClient({
     registry: config.registry,
+    requestTimeoutMs: config.requestTimeoutMs,
     token: config.token,
     otp: config.otp,
     dryRun: config.dryRun,

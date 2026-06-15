@@ -164,7 +164,7 @@ export async function runWithConcurrency<T, R>(
   options?: RunWithConcurrencyOptions<R, T>,
 ): Promise<R[]> {
   const safeConcurrency = Math.max(1, Math.floor(concurrency))
-  const results = Array.from({ length: items.length }) as R[]
+  const results: (R | undefined)[] = Array.from({ length: items.length })
   let nextIndex = 0
   let shouldStop = false
 
@@ -195,7 +195,7 @@ export async function runWithConcurrency<T, R>(
 
   await Promise.all(Array.from({ length: safeConcurrency }, () => runWorker()))
 
-  return results.filter(Boolean)
+  return results.filter((result): result is R => result !== undefined)
 }
 
 /**

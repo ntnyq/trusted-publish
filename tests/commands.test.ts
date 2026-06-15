@@ -45,6 +45,7 @@ function createConfig(cwd: string): TrustedPublishConfig {
   return {
     cwd,
     registry: 'https://registry.npmjs.org',
+    requestTimeoutMs: 30_000,
     provider: 'github',
     include: [],
     exclude: [],
@@ -186,6 +187,34 @@ describe('command flows', () => {
           repository: 'owner/another-repo',
           workflow_ref: {
             file: 'release.yml',
+          },
+        },
+        permissions: ['createPackage'],
+      },
+    ]
+
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValue(Response.json(body, { status: 200 }))
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const code = await runVerify(config)
+
+    expect(code).toBe(1)
+    ws.cleanup()
+  })
+
+  it('verify fails when nested claim payload does not match', async () => {
+    const ws = createWorkspace(['@scope/a'])
+    const config = createConfig(ws.cwd)
+
+    const body = [
+      {
+        type: 'github',
+        claims: {
+          repository: 'owner/repo',
+          workflow_ref: {
+            file: 'another.yml',
           },
         },
         permissions: ['createPackage'],

@@ -19,6 +19,7 @@ export interface LoadConfigInput {
   cwd?: string
   config?: string
   profile?: string
+  requestTimeoutMs?: number | string
   provider?: string
   package?: string
   include?: string | string[]
@@ -159,6 +160,10 @@ export async function loadTrustedPublishConfig(
 
   const patch: Partial<TrustedPublishConfig> = {
     cwd,
+    requestTimeoutMs: toNumber(
+      cliInput.requestTimeoutMs,
+      profileConfig.requestTimeoutMs,
+    ),
     provider:
       (cliInput.provider as TrustedPublishConfig['provider']) ||
       profileConfig.provider,
@@ -240,6 +245,41 @@ export async function loadTrustedPublishConfig(
 export function validateConfig(config: TrustedPublishConfig): void {
   if (!config.provider) {
     throw new Error('provider is required')
+  }
+
+  if (!Number.isFinite(config.concurrency) || config.concurrency < 1) {
+    throw new Error('concurrency must be >= 1')
+  }
+
+  if (!Number.isFinite(config.maxRetries) || config.maxRetries < 0) {
+    throw new Error('maxRetries must be >= 0')
+  }
+
+  if (!Number.isFinite(config.retryDelayMs) || config.retryDelayMs < 0) {
+    throw new Error('retryDelayMs must be >= 0')
+  }
+
+  if (!Number.isFinite(config.maxRetryDelayMs) || config.maxRetryDelayMs < 0) {
+    throw new Error('maxRetryDelayMs must be >= 0')
+  }
+
+  if (config.retryDelayMs > config.maxRetryDelayMs) {
+    throw new Error('retryDelayMs must be <= maxRetryDelayMs')
+  }
+
+  if (!Number.isFinite(config.rateLimitMs) || config.rateLimitMs < 0) {
+    throw new Error('rateLimitMs must be >= 0')
+  }
+
+  if (
+    !Number.isFinite(config.requestTimeoutMs) ||
+    config.requestTimeoutMs < 0
+  ) {
+    throw new Error('requestTimeoutMs must be >= 0')
+  }
+
+  if (!URL.canParse(config.registry)) {
+    throw new Error('registry must be a valid URL')
   }
 
   if (!config.permissions.length) {

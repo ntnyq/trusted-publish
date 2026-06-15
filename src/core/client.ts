@@ -6,6 +6,7 @@ import { sleep } from './utils'
  */
 interface ClientOptions {
   registry: string
+  requestTimeoutMs: number
   token: string | undefined
   otp: string | undefined
   dryRun: boolean
@@ -38,6 +39,7 @@ export class NpmTrustClient {
    * ```ts
    * const client = new NpmTrustClient({
    *   registry: 'https://registry.npmjs.org',
+   *   requestTimeoutMs: 30000,
    *   token: process.env.NPM_TOKEN,
    *   otp: process.env.NPM_OTP,
    *   dryRun: false,
@@ -162,10 +164,29 @@ export class NpmTrustClient {
     while (true) {
       await this.waitForRateLimit(init.method)
 
-      const res = await fetch(url, init)
+      let res: Response | undefined = undefined
+      try {
+        res = await this.fetchWithTimeout(url, init)
+      } catch (error) {
+        if (attempt >= this.options.maxRetries) {
+          throw error
+        }
+        const expDelay = Math.min(
+          this.options.retryDelayMs * 2 ** attempt,
+          this.options.maxRetryDelayMs,
+        )
+        await sleep(expDelay)
+        attempt += 1
+        continue
+      }
+
+      if (!res) {
+        continue
+      }
+
       if (res.ok) {
         if (init.method && init.method !== 'GET') {
-          this.lastMutationAt = Date.now()
+          this.lastMutationAt = Math.max(this.lastMutationAt, Date.now())
         }
         return res
       }
@@ -182,6 +203,37 @@ export class NpmTrustClient {
       )
       await sleep(retryAfterMs > 0 ? retryAfterMs : expDelay)
       attempt += 1
+    }
+  }
+
+  private async fetchWithTimeout(
+    url: string,
+    init: RequestInit,
+  ): Promise<Response> {
+    if (this.options.requestTimeoutMs <= 0) {
+      return fetch(url, init)
+    }
+
+    const controller = new AbortController()
+    const timeoutHandle = setTimeout(() => {
+      controller.abort()
+    }, this.options.requestTimeoutMs)
+
+    try {
+      return await fetch(url, {
+        ...init,
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error(
+          `request timed out after ${this.options.requestTimeoutMs}ms: ${url}`,
+          { cause: error },
+        )
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutHandle)
     }
   }
 

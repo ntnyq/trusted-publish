@@ -22,6 +22,7 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
   const reporter = createReporter(config)
   const client = new NpmTrustClient({
     registry: config.registry,
+    requestTimeoutMs: config.requestTimeoutMs,
     token: config.token,
     otp: config.otp,
     dryRun: config.dryRun,
@@ -44,7 +45,7 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
   const processed = await runWithConcurrency(
     packages,
     config.concurrency,
-    async pkg => {
+    async (pkg, index) => {
       if (config.dryRun) {
         const result: PackageCommandResult = {
           packageName: pkg.name,
@@ -53,7 +54,7 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
           message: 'dry-run (no changes applied)',
         }
         reporter.result(result)
-        return result
+        return { index, result }
       }
 
       try {
@@ -65,7 +66,7 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
           message: 'trusted publisher configured',
         }
         reporter.result(result)
-        return result
+        return { index, result }
       } catch (error) {
         const { statusCode } = error as { statusCode?: number }
         if (statusCode === STATUS_CONFLICT) {
@@ -76,7 +77,7 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
             message: 'trust configuration already exists',
           }
           reporter.result(result)
-          return result
+          return { index, result }
         }
 
         const result: PackageCommandResult = {
@@ -86,18 +87,26 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
           message: (error as Error).message,
         }
         reporter.result(result)
-        return result
+        return { index, result }
       }
     },
     {
       failFast: config.failFast,
-      shouldStop: result => result.status === 'failed',
+      shouldStop: ({ result }) => result.status === 'failed',
     },
   )
 
-  results.push(...processed)
+  const processedIndexes = new Set<number>()
+  for (const item of processed) {
+    processedIndexes.add(item.index)
+    results.push(item.result)
+  }
+
   if (config.failFast && results.length < packages.length) {
-    for (const pkg of packages.slice(results.length)) {
+    for (const [index, pkg] of packages.entries()) {
+      if (processedIndexes.has(index)) {
+        continue
+      }
       const skippedResult: PackageCommandResult = {
         packageName: pkg.name,
         packageDir: pkg.dir,
