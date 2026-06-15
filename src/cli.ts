@@ -1,13 +1,15 @@
 import { cac } from 'cac'
+import { name, version } from '../package.json'
 import { runList } from './commands/list'
 import { runRevoke } from './commands/revoke'
 import { runSetup } from './commands/setup'
 import { runVerify } from './commands/verify'
 import { loadTrustedPublishConfig } from './core/config'
 
-const cli = cac('trusted-publish')
+const cli = cac(name)
 
 cli
+  .version(version)
   .option('--cwd <path>', 'working directory')
   .option('--config <path>', 'custom config file')
   .option('--profile <name>', 'config profile')

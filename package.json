@@ -24,10 +24,9 @@
     "email": "ntnyq13@gmail.com"
   },
   "repository": "ntnyq/trusted-publish",
-  "bin": {
-    "trusted-publish": "./dist/cli.mjs"
-  },
+  "bin": "./bin.mjs",
   "files": [
+    "bin.mjs",
     "dist"
   ],
   "type": "module",

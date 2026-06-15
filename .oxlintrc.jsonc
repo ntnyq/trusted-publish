@@ -89,6 +89,13 @@
   },
   "overrides": [
     {
+      "files": ["bin.{js,mjs}"],
+      "rules": {
+        "import/unambiguous": "off",
+        "unicorn/prefer-module": "off",
+      },
+    },
+    {
       "files": ["scripts/**/*.{js,ts}"],
       "rules": {
         "no-console": "off",
