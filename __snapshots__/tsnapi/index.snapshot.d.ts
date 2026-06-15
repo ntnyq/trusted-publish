@@ -14,6 +14,9 @@ export interface ClaimsInput {
   vcsOrigin?: string;
   contextIds?: string[];
 }
+export interface Config extends Partial<TrustedPublishConfig> {
+  profiles?: Record<string, Partial<TrustedPublishConfig>>;
+}
 export interface DiscoveryConfig {
   fromWorkspaces: boolean;
   fromGlobs: boolean;
@@ -166,6 +169,11 @@ export interface TrustedPublishConfig {
 
 // #region Types
 export type CommandResultStatus = 'configured' | 'already' | 'failed' | 'skipped' | 'revoked';
+export type NodeApiConfigInput = LoadConfigInput;
+export type NodeApiPackageMeta = PackageMeta;
+export type NodeApiRevokeOptions = RevokeOptions;
+export type NodeApiRuntimeConfig = TrustedPublishConfig;
+export type NodeApiTrustPayload = TrustConfig;
 export type ProviderType = 'github' | 'gitlab' | 'circleci';
 export type TrustClaims = TrustClaimsGitHub | TrustClaimsGitLab | TrustClaimsCircleCI;
 export type TrustPermission = 'createPackage' | 'createStagedPackage';
@@ -192,7 +200,7 @@ export declare class NpmTrustClient {
 
 // #region Functions
 export declare function buildTrustConfig(_: TrustedPublishConfig): TrustConfig;
-export declare function buildTrustedPublishPayload(_: TrustedPublishConfig): TrustConfig;
+export declare function buildTrustedPublishPayload(_: NodeApiRuntimeConfig): TrustConfig;
 export declare function createReporter(_: TrustedPublishConfig): {
   title(_: string): void;
   info(_: string): void;
@@ -203,28 +211,29 @@ export declare function createReporter(_: TrustedPublishConfig): {
   summary(_: Summary, _: PackageCommandResult[]): void;
 };
 export declare function createTrustedPublishClient(_: TrustedPublishConfig): NpmTrustClient;
+export declare function defineConfig<T extends Config>(_: T): T;
 export declare function discoverPackages(_: TrustedPublishConfig): Promise<PackageMeta[]>;
-export declare function discoverTrustedPublishPackages(_: TrustedPublishConfig): Promise<PackageMeta[]>;
-export declare function listTrustedPublish(_: TrustedPublishConfig): Promise<number>;
+export declare function discoverTrustedPublishPackages(_: NodeApiRuntimeConfig): Promise<PackageMeta[]>;
+export declare function listTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
 export declare function loadTrustedPublishConfig(_: LoadConfigInput): Promise<TrustedPublishConfig>;
 export declare function mergeConfig(_: TrustedPublishConfig, _: Partial<TrustedPublishConfig>): TrustedPublishConfig;
 export declare function normalizeRegistry(_: string): string;
 export declare function parsePermissions(_: PermissionInput): TrustPermission[];
 export declare function resolveCwd(_?: string): string;
-export declare function resolveTrustedPublishConfig(_: LoadConfigInput): Promise<TrustedPublishConfig>;
-export declare function revokeTrustedPublish(_: TrustedPublishConfig, _: RevokeOptions): Promise<number>;
+export declare function resolveTrustedPublishConfig(_: NodeApiConfigInput): Promise<TrustedPublishConfig>;
+export declare function revokeTrustedPublish(_: NodeApiRuntimeConfig, _: NodeApiRevokeOptions): Promise<number>;
 export declare function runList(_: TrustedPublishConfig): Promise<number>;
 export declare function runRevoke(_: TrustedPublishConfig, _: RevokeOptions): Promise<number>;
 export declare function runSetup(_: TrustedPublishConfig): Promise<number>;
 export declare function runVerify(_: TrustedPublishConfig): Promise<number>;
 export declare function runWithConcurrency<T, R>(_: T[], _: number, _: (_: T, _: number) => Promise<R>, _?: RunWithConcurrencyOptions<R, T>): Promise<R[]>;
-export declare function setupTrustedPublish(_: TrustedPublishConfig): Promise<number>;
+export declare function setupTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
 export declare function sleep(_: number): Promise<void>;
 export declare function summarize(_: PackageCommandResult[]): Summary;
 export declare function toArray(_: string | string[] | undefined): string[];
 export declare function uniq<T>(_: T[]): T[];
 export declare function validateConfig(_: TrustedPublishConfig): void;
-export declare function verifyTrustedPublish(_: TrustedPublishConfig): Promise<number>;
+export declare function verifyTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
 // #endregion
 
 // #region Variables

@@ -139,6 +139,34 @@ export interface TrustedPublishConfig {
 }
 
 /**
+ * User-facing configuration file type.
+ *
+ * This type is intended for values authored in
+ * trusted-publish.config.{ts,mts,js,mjs,cjs,json}.
+ *
+ * It allows partial runtime fields and optional named profiles
+ * that can override base values when --profile is used.
+ *
+ * @example
+ * const config: Config = {
+ *   provider: 'github',
+ *   claims: {
+ *     repository: 'owner/repo',
+ *     workflow: 'release.yml',
+ *   },
+ *   profiles: {
+ *     ci: {
+ *       dryRun: true,
+ *       failFast: true,
+ *     },
+ *   },
+ * }
+ */
+export interface Config extends Partial<TrustedPublishConfig> {
+  profiles?: Record<string, Partial<TrustedPublishConfig>>
+}
+
+/**
  * Per-package command status.
  */
 export type CommandResultStatus =

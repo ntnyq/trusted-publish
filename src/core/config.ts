@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { loadConfig } from 'unconfig'
 import { CONFIG_FILES, DEFAULT_CONFIG } from './constants'
-import type { TrustedPublishConfig } from './types'
+import type { Config, TrustedPublishConfig } from './types'
 import {
   mergeConfig,
   normalizeRegistry,
@@ -59,8 +59,31 @@ export interface LoadConfigInput {
   otp?: string
 }
 
-interface ConfigFileData extends Partial<TrustedPublishConfig> {
-  profiles?: Record<string, Partial<TrustedPublishConfig>>
+/**
+ * Helper for authoring strongly-typed configuration files.
+ *
+ * @param config - User configuration object.
+ * @returns The same object with preserved type inference.
+ *
+ * @example
+ * import { defineConfig } from 'trusted-publish'
+ *
+ * export default defineConfig({
+ *   provider: 'github',
+ *   claims: {
+ *     repository: 'owner/repo',
+ *     workflow: 'release.yml',
+ *   },
+ *   profiles: {
+ *     ci: {
+ *       dryRun: true,
+ *       failFast: true,
+ *     },
+ *   },
+ * })
+ */
+export function defineConfig<T extends Config>(config: T): T {
+  return config
 }
 
 /**
@@ -87,7 +110,7 @@ export async function loadTrustedPublishConfig(
   const source =
     cliInput.config && existsSync(cliInput.config) ? cliInput.config : undefined
 
-  const { config } = await loadConfig<ConfigFileData>({
+  const { config } = await loadConfig<Config>({
     cwd,
     defaults: {},
     sources: source

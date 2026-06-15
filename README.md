@@ -5,36 +5,18 @@
 [![NPM DOWNLOADS](https://img.shields.io/npm/dy/trusted-publish.svg)](https://www.npmjs.com/package/trusted-publish)
 [![LICENSE](https://img.shields.io/github/license/ntnyq/trusted-publish.svg)](https://github.com/ntnyq/trusted-publish/blob/main/LICENSE)
 
-A CLI for configuring npm Trusted Publisher relationships in single-package and monorepo projects.
+A CLI and Node API for configuring npm Trusted Publisher relationships in single-package and monorepo projects.
 
-Supported providers:
+## ✨ Highlights
 
-- GitHub
-- GitLab
-- CircleCI
+- 🚀 Batch setup, list, verify, and revoke trusted publisher relationships
+- 🧭 Workspace discovery from npm/yarn/pnpm, bun, and glob scanning
+- 🧪 Dry-run mode for safe previews
+- ⚡ Built-in retry, backoff, and request timeout controls
+- 🧱 Config file + CLI override model with optional profiles
+- 📦 Programmatic Node API with typed helpers
 
-Supported package discovery:
-
-- npm/yarn/pnpm workspaces
-- bun workspaces
-- tinyglobby-based package.json scan
-
-## Features
-
-- Setup trusted publisher in batch for one or many packages
-- List existing trust configurations
-- Verify expected configuration is present
-- Revoke trust configuration by id
-- Dry-run mode for previewing all changes
-- Concurrency controls for batch operations
-- 429 and 5xx retry strategy with backoff
-- Configurable rate-limit interval for mutation requests
-- Fail-fast mode for CI pipelines
-- Config file + CLI override model
-- Include/exclude/ignore filters
-- Text and JSON output
-
-## Install
+## 📦 Installation
 
 ```shell
 npm install trusted-publish
@@ -48,18 +30,14 @@ yarn add trusted-publish
 pnpm add trusted-publish
 ```
 
-## Usage
+## 🚀 Quick Start
 
 ```shell
 trusted-publish setup --provider github --repository owner/repo --workflow release.yml --allow-publish
 ```
 
 ```shell
-trusted-publish setup --provider github --repository owner/repo --workflow release.yml --allow-publish --concurrency 6 --max-retries 3 --retry-delay-ms 1500 --rate-limit-ms 250
-```
-
-```shell
-trusted-publish list --provider github
+trusted-publish list --provider github --repository owner/repo --workflow release.yml
 ```
 
 ```shell
@@ -67,74 +45,118 @@ trusted-publish verify --provider gitlab --project group/project --file .gitlab-
 ```
 
 ```shell
-NPM_TOKEN=xxxx trusted-publish verify --provider github --repository owner/repo --workflow release.yml --allow-publish
+trusted-publish revoke --provider github --repository owner/repo --workflow release.yml --id trust-id
 ```
 
-```shell
-trusted-publish revoke --id <trust-id>
-```
+## 🧰 Commands
 
-## Common Options
+| Command | Purpose                                               |
+| ------- | ----------------------------------------------------- |
+| setup   | Create trusted publisher config for selected packages |
+| list    | List trust config counts for selected packages        |
+| verify  | Verify expected trust payload exists                  |
+| revoke  | Revoke trust config by id                             |
 
-- --cwd <path>
-- --config <path>
-- --profile <name>
-- --package <name>
-- --include <a,b,c>
-- --exclude <a,b,c>
-- --ignores <glob,glob>
-- --dry-run
-- --concurrency <n>
-- --fail-fast
-- --max-retries <n>
-- --retry-delay-ms <n>
-- --max-retry-delay-ms <n>
-- --rate-limit-ms <n>
-- --json
-- --registry <url>
-- --token <npm-token>
-- --otp <2fa-otp>
+## 📝 CLI Reference (Complete)
 
-## Provider Options
+The tables below document every CLI argument, including type, allowed values, whether it is required, default value, and description. Requiredness can vary by command and provider.
 
-GitHub:
+### General Arguments
 
-- --provider github
-- --repository owner/repo
-- --workflow workflow.yml (or --file)
-- --environment production (optional)
+| Argument                     | Type    | Allowed Values         | Required                         | Default                    | Description                                  |
+| ---------------------------- | ------- | ---------------------- | -------------------------------- | -------------------------- | -------------------------------------------- |
+| --cwd <path>                 | string  | Any directory path     | No                               | Current working directory  | Sets the execution root directory            |
+| --config <path>              | string  | Any config file path   | No                               | Auto-discovery             | Specifies a config file path                 |
+| --profile <name>             | string  | Key in config profiles | No                               | None                       | Uses a named config profile                  |
+| --package <name>             | string  | npm package name       | No                               | None                       | Processes a single package only              |
+| --include <names>            | string  | Comma-separated names  | No                               | Empty                      | Includes only the specified packages         |
+| --exclude <names>            | string  | Comma-separated names  | No                               | Empty                      | Excludes the specified packages              |
+| --ignores <globs>            | string  | Comma-separated globs  | No                               | Empty                      | Adds ignore patterns                         |
+| --workspace-globs <globs>    | string  | Comma-separated globs  | No                               | Empty                      | Adds workspace discovery patterns            |
+| --package-json-globs <globs> | string  | Comma-separated globs  | No                               | \*\*/package.json          | package.json scan patterns                   |
+| --from-workspaces            | boolean | true/false             | No                               | true                       | Enables workspace-based discovery            |
+| --from-globs                 | boolean | true/false             | No                               | true                       | Enables glob-based discovery                 |
+| --include-private            | boolean | true/false             | No                               | false                      | Includes private packages                    |
+| --concurrency <n>            | number  | >= 1                   | No                               | 4                          | Number of concurrent package tasks           |
+| --fail-fast                  | boolean | true/false             | No                               | false                      | Stops scheduling new tasks after first error |
+| --max-retries <n>            | number  | >= 0                   | No                               | 2                          | Retry count for 429/5xx responses            |
+| --retry-delay-ms <n>         | number  | >= 0                   | No                               | 1200                       | Base retry delay in milliseconds             |
+| --max-retry-delay-ms <n>     | number  | >= 0                   | No                               | 8000                       | Maximum retry delay in milliseconds          |
+| --rate-limit-ms <n>          | number  | >= 0                   | No                               | 0                          | Minimum spacing for mutation requests        |
+| --request-timeout-ms <n>     | number  | >= 0                   | No                               | 30000                      | Per-request timeout in milliseconds          |
+| --dry-run                    | boolean | true/false             | No                               | false                      | Preview mode, does not apply changes         |
+| --json                       | boolean | true/false             | No                               | false                      | Outputs JSON result format                   |
+| --silent                     | boolean | true/false             | No                               | false                      | Suppresses normal logs                       |
+| --verbose                    | boolean | true/false             | No                               | false                      | Enables verbose logs                         |
+| --yes                        | boolean | true/false             | No                               | false                      | Skips confirmations (reserved)               |
+| --registry <url>             | string  | Valid URL              | No                               | https://registry.npmjs.org | npm registry endpoint                        |
+| --token <token>              | string  | npm token              | Recommended for setup/revoke     | None                       | Auth token                                   |
+| --otp <otp>                  | string  | OTP string             | Recommended when 2FA is required | None                       | npm 2FA OTP                                  |
 
-GitLab:
+### Provider Arguments
 
-- --provider gitlab
-- --project group/project
-- --file .gitlab-ci.yml
-- --environment production (optional)
+| Argument                      | Type   | Allowed Values           | Required                                           | Providers      | Description                      |
+| ----------------------------- | ------ | ------------------------ | -------------------------------------------------- | -------------- | -------------------------------- |
+| --provider <type>             | string | github, gitlab, circleci | Yes                                                | All            | Sets the CI provider             |
+| --repository <value>          | string | owner/repo               | Yes for GitHub                                     | github         | GitHub repository identifier     |
+| --workflow <file>             | string | Workflow file name       | Conditionally required for GitHub                  | github         | GitHub workflow file             |
+| --project <value>             | string | group/project            | Yes for GitLab                                     | gitlab         | GitLab project identifier        |
+| --file <file>                 | string | CI config file path      | Yes for GitLab, optional workflow alias for GitHub | github, gitlab | Provider config file path        |
+| --environment <name>          | string | Any environment name     | No                                                 | github, gitlab | Protected environment (optional) |
+| --org-id <id>                 | string | UUID/string              | Yes for CircleCI                                   | circleci       | CircleCI org id                  |
+| --project-id <id>             | string | UUID/string              | Yes for CircleCI                                   | circleci       | CircleCI project id              |
+| --pipeline-definition-id <id> | string | UUID/string              | Yes for CircleCI                                   | circleci       | CircleCI pipeline definition id  |
+| --vcs-origin <value>          | string | provider/owner/repo      | Yes for CircleCI                                   | circleci       | CircleCI vcs origin              |
+| --context-ids <ids>           | string | Comma-separated UUIDs    | No                                                 | circleci       | CircleCI context ids             |
 
-CircleCI:
+### Permission Arguments
 
-- --provider circleci
-- --org-id <uuid>
-- --project-id <uuid>
-- --pipeline-definition-id <uuid>
-- --vcs-origin provider/owner/repo
-- --context-ids <uuid,uuid> (optional)
+| Argument              | Type    | Allowed Values | Required | Default | Description              |
+| --------------------- | ------- | -------------- | -------- | ------- | ------------------------ |
+| --allow-publish       | boolean | true/false     | No       | false   | Adds createPackage       |
+| --allow-stage-publish | boolean | true/false     | No       | false   | Adds createStagedPackage |
 
-Permissions:
+### Revoke-only Argument
 
-- --allow-publish
-- --allow-stage-publish
+| Argument  | Type   | Allowed Values | Required for | Default | Description                      |
+| --------- | ------ | -------------- | ------------ | ------- | -------------------------------- |
+| --id <id> | string | trust id       | revoke       | None    | Trust configuration id to revoke |
 
-## Config File
+## ⚙️ Configuration (Config)
 
-Create trusted-publish.config.ts in project root:
+### Supported Config File Names
+
+- trusted-publish.config.ts
+- trusted-publish.config.mts
+- trusted-publish.config.js
+- trusted-publish.config.mjs
+- trusted-publish.config.cjs
+- trusted-publish.config.json
+
+### Config Type
+
+Use the exported Config type to describe your config file structure. It supports:
+
+- All fields from Partial<TrustedPublishConfig>
+- An optional profiles field (used with --profile overrides)
+
+### defineConfig Helper
+
+defineConfig is a zero-runtime-cost typing helper that:
+
+- Returns exactly what you pass in
+- Preserves TypeScript inference
+- Improves editor autocomplete and validation in config files
+
+### Recommended Config Example
 
 ```ts
-import type { TrustedPublishConfig } from 'trusted-publish'
+import { defineConfig } from 'trusted-publish'
 
-const config: Partial<TrustedPublishConfig> = {
+export default defineConfig({
   provider: 'github',
   registry: 'https://registry.npmjs.org',
+  requestTimeoutMs: 30_000,
   include: [],
   exclude: [],
   ignores: ['**/fixtures/**'],
@@ -149,33 +171,102 @@ const config: Partial<TrustedPublishConfig> = {
   retryDelayMs: 1500,
   maxRetryDelayMs: 8000,
   rateLimitMs: 250,
-}
-
-export default config
+  profiles: {
+    ci: {
+      dryRun: true,
+      failFast: true,
+      concurrency: 2,
+    },
+  },
+})
 ```
 
-Then run:
+Using a profile:
 
 ```shell
-trusted-publish setup --dry-run
+trusted-publish setup --profile ci
 ```
 
-## Retry and Fail-Fast Strategy
+## 🧪 Node API
 
-- Retries are applied on HTTP 429 and 5xx responses.
-- Retry order uses exponential backoff, then clamps by max retry delay.
-- If response has retry-after header, that delay is preferred.
-- rate-limit-ms enforces minimum spacing between POST/DELETE calls.
-- fail-fast stops scheduling new packages once one package fails.
+trusted-publish also provides a Node API for scripts and platform integrations.
 
-## Auth Notes
+### Exported Node API Types
 
-- setup/revoke requires npm auth capable of trust endpoint operations.
-- verify/list may return 401 if registry requires bearer token for trust reads.
-- You can pass credentials via CLI flags or environment variables:
-  - NPM_TOKEN
-  - NPM_OTP
+| Type                 | Description                                |
+| -------------------- | ------------------------------------------ |
+| NodeApiConfigInput   | Input type for resolveTrustedPublishConfig |
+| NodeApiRuntimeConfig | Fully resolved runtime config type         |
+| NodeApiPackageMeta   | Package discovery result type              |
+| NodeApiTrustPayload  | Generated trusted publisher payload type   |
+| NodeApiRevokeOptions | Revoke options type                        |
 
-## License
+### End-to-end Node API Example
+
+```ts
+import {
+  resolveTrustedPublishConfig,
+  discoverTrustedPublishPackages,
+  buildTrustedPublishPayload,
+  setupTrustedPublish,
+  listTrustedPublish,
+  verifyTrustedPublish,
+  revokeTrustedPublish,
+  createTrustedPublishClient,
+  type NodeApiConfigInput,
+} from 'trusted-publish'
+
+const input: NodeApiConfigInput = {
+  provider: 'github',
+  repository: 'owner/repo',
+  workflow: 'release.yml',
+  allowPublish: true,
+  dryRun: true,
+}
+
+async function main() {
+  const config = await resolveTrustedPublishConfig(input)
+
+  const packages = await discoverTrustedPublishPackages(config)
+  console.log(
+    'packages',
+    packages.map(p => p.name),
+  )
+
+  const payload = buildTrustedPublishPayload(config)
+  console.log('payload', payload)
+
+  const client = createTrustedPublishClient(config)
+  const trustList = await client.list(packages[0]?.name || 'example')
+  console.log('first package trust entries', trustList.length)
+
+  await setupTrustedPublish(config)
+  await listTrustedPublish(config)
+  await verifyTrustedPublish(config)
+
+  // If you need to revoke:
+  // await revokeTrustedPublish(config, { id: 'trust-id' })
+}
+
+main()
+```
+
+## 🔁 Retry, Rate Limiting, and Fail-Fast
+
+- Automatically retries on HTTP 429 and 5xx
+- Prefers retry-after response header when available
+- Uses exponential backoff capped by max-retry-delay-ms
+- rate-limit-ms controls spacing between mutation requests
+- fail-fast stops scheduling new tasks after first failure
+- request-timeout-ms limits maximum wait time per request
+
+## 🔐 Auth Notes
+
+- setup/revoke usually require npm credentials with trust endpoint permissions
+- list/verify may also require a token depending on registry policy
+- You can pass credentials via --token and --otp
+- You can also use environment variables: NPM_TOKEN and NPM_OTP
+
+## 📄 License
 
 [MIT](./LICENSE) License © 2026-PRESENT [ntnyq](https://github.com/ntnyq)

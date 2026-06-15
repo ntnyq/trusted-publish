@@ -25,6 +25,7 @@ export function buildTrustConfig(_) {}
 export function buildTrustedPublishPayload(_) {}
 export function createReporter(_) {}
 export function createTrustedPublishClient(_) {}
+export function defineConfig(_) {}
 export async function discoverPackages(_) {}
 export async function discoverTrustedPublishPackages(_) {}
 export async function listTrustedPublish(_) {}
