@@ -1,14 +1,13 @@
-import { NpmTrustClient } from '../core/client'
 import { discoverPackages } from '../core/discovery'
 import { createReporter, summarize } from '../core/reporter'
 import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { runWithConcurrency } from '../utils'
+import { createCommandClient, runPackageCommand } from './shared'
 
 /**
  * Revoke command options.
  */
 export interface RevokeOptions {
-  id?: string
+  id: string
 }
 
 /**
@@ -28,17 +27,7 @@ export async function runRevoke(
   options: RevokeOptions,
 ): Promise<number> {
   const reporter = createReporter(config)
-  const client = new NpmTrustClient({
-    registry: config.registry,
-    requestTimeoutMs: config.requestTimeoutMs,
-    token: config.token,
-    otp: config.otp,
-    dryRun: config.dryRun,
-    maxRetries: config.maxRetries,
-    retryDelayMs: config.retryDelayMs,
-    maxRetryDelayMs: config.maxRetryDelayMs,
-    rateLimitMs: config.rateLimitMs,
-  })
+  const client = createCommandClient(config)
 
   if (!options.id) {
     throw new Error('revoke command requires --id')
@@ -46,55 +35,34 @@ export async function runRevoke(
   const trustId = options.id
 
   const packages = await discoverPackages(config)
-  const results: PackageCommandResult[] = []
 
   reporter.title('npm trusted publisher revoke')
   reporter.info(`Selected packages: ${packages.length}`)
   reporter.info(`Trust ID: ${trustId}`)
 
-  const processed = await runWithConcurrency(
+  const results = await runPackageCommand(
+    config,
     packages,
-    config.concurrency,
+    reporter,
     async pkg => {
       if (config.dryRun) {
-        const result: PackageCommandResult = {
+        return {
           packageName: pkg.name,
           packageDir: pkg.dir,
           status: 'skipped',
           message: `dry-run revoke id=${trustId}`,
-        }
-        reporter.result(result)
-        return result
+        } satisfies PackageCommandResult
       }
 
-      try {
-        await client.revoke(pkg.name, trustId)
-        const result: PackageCommandResult = {
-          packageName: pkg.name,
-          packageDir: pkg.dir,
-          status: 'revoked',
-          message: 'trust configuration revoked',
-        }
-        reporter.result(result)
-        return result
-      } catch (error) {
-        const result: PackageCommandResult = {
-          packageName: pkg.name,
-          packageDir: pkg.dir,
-          status: 'failed',
-          message: (error as Error).message,
-        }
-        reporter.result(result)
-        return result
-      }
-    },
-    {
-      failFast: config.failFast,
-      shouldStop: result => result.status === 'failed',
+      await client.revoke(pkg.name, trustId)
+      return {
+        packageName: pkg.name,
+        packageDir: pkg.dir,
+        status: 'revoked',
+        message: 'trust configuration revoked',
+      } satisfies PackageCommandResult
     },
   )
-
-  results.push(...processed)
 
   const summary = summarize(results)
   reporter.summary(summary, results)

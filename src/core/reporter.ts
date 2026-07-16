@@ -21,27 +21,29 @@ import type {
 export function createReporter(config: TrustedPublishConfig) {
   return {
     title(message: string) {
-      if (!config.silent) {
+      if (!config.silent && !config.json) {
         consola.box(message)
       }
     },
     info(message: string) {
-      if (!config.silent) {
+      if (!config.silent && !config.json) {
         consola.info(message)
       }
     },
     success(message: string) {
-      if (!config.silent) {
+      if (!config.silent && !config.json) {
         consola.success(message)
       }
     },
     warn(message: string) {
-      if (!config.silent) {
+      if (!config.silent && !config.json) {
         consola.warn(message)
       }
     },
     error(message: string) {
-      consola.error(message)
+      if (!config.silent && !config.json) {
+        consola.error(message)
+      }
     },
     result(result: PackageCommandResult) {
       if (config.json) {

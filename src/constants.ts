@@ -29,7 +29,7 @@ export const DEFAULT_CONFIG: TrustedPublishConfig = {
     packageJsonGlobs: ['**/package.json'],
   },
   claims: {},
-  permissions: ['createPackage'],
+  permissions: [],
   concurrency: 4,
   failFast: false,
   maxRetries: 2,

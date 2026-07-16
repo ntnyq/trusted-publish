@@ -6,7 +6,7 @@ import { runList } from '../src/commands/list'
 import { runRevoke } from '../src/commands/revoke'
 import { runSetup } from '../src/commands/setup'
 import { runVerify } from '../src/commands/verify'
-import type { TrustedPublishConfig } from '../src/core/types'
+import type { TrustedPublishConfig, TrustConfig } from '../src/core/types'
 import {
   createTrustedPublishClient,
   listTrustedPublish,
@@ -78,6 +78,7 @@ function createConfig(cwd: string): TrustedPublishConfig {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('command flows', () => {
@@ -119,6 +120,75 @@ describe('command flows', () => {
     const code = await runSetup(config)
 
     expect(code).toBe(0)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    ws.cleanup()
+  })
+
+  it('setup treats a matching conflict as already configured', async () => {
+    const ws = createWorkspace(['@scope/a'])
+    const config = createConfig(ws.cwd)
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response('conflict', {
+          status: 409,
+          statusText: 'Conflict',
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            id: 'trust-id',
+            type: 'github',
+            claims: {
+              repository: 'owner/repo',
+              workflow_ref: {
+                file: 'release.yml',
+              },
+            },
+            permissions: ['createPackage'],
+          },
+        ]),
+      )
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const code = await runSetup(config)
+
+    expect(code).toBe(0)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    ws.cleanup()
+  })
+
+  it('setup fails when an existing conflict does not match', async () => {
+    const ws = createWorkspace(['@scope/a'])
+    const config = createConfig(ws.cwd)
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response('conflict', {
+          status: 409,
+          statusText: 'Conflict',
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            type: 'github',
+            claims: {
+              repository: 'owner/another-repo',
+              workflow_ref: {
+                file: 'release.yml',
+              },
+            },
+            permissions: ['createPackage'],
+          },
+        ]),
+      )
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const code = await runSetup(config)
+
+    expect(code).toBe(1)
     expect(fetchSpy).toHaveBeenCalledTimes(2)
     ws.cleanup()
   })
@@ -173,6 +243,46 @@ describe('command flows', () => {
 
     expect(code).toBe(0)
     expect(fetchSpy).toHaveBeenCalledOnce()
+    ws.cleanup()
+  })
+
+  it('verify ignores permission ordering', async () => {
+    const ws = createWorkspace(['@scope/a'])
+    const config = createConfig(ws.cwd)
+    config.permissions = ['createPackage', 'createStagedPackage']
+    const fetchSpy = vi.fn().mockResolvedValue(
+      Response.json([
+        {
+          type: 'github',
+          claims: {
+            repository: 'owner/repo',
+            workflow_ref: {
+              file: 'release.yml',
+            },
+          },
+          permissions: ['createStagedPackage', 'createPackage'],
+        },
+      ]),
+    )
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const code = await runVerify(config)
+
+    expect(code).toBe(0)
+    ws.cleanup()
+  })
+
+  it('verify fails when no packages match the selection', async () => {
+    const ws = createWorkspace(['@scope/a'])
+    const config = createConfig(ws.cwd)
+    config.package = '@scope/missing'
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const code = await runVerify(config)
+
+    expect(code).toBe(1)
+    expect(fetchSpy).not.toHaveBeenCalled()
     ws.cleanup()
   })
 
@@ -244,6 +354,35 @@ describe('command flows', () => {
 
     expect(code).toBe(0)
     expect(fetchSpy).toHaveBeenCalledOnce()
+    ws.cleanup()
+  })
+
+  it('list accounts for skipped packages after fail-fast', async () => {
+    const { consola } = await import('consola')
+    const ws = createWorkspace(['@scope/a', '@scope/b', '@scope/c'])
+    const config = createConfig(ws.cwd)
+    config.concurrency = 1
+    config.failFast = true
+    config.json = true
+    config.maxRetries = 0
+    config.silent = false
+    const logSpy = vi.spyOn(consola, 'log').mockImplementation(() => {})
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response('boom', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      }),
+    )
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const code = await runList(config)
+    const report = JSON.parse(String(logSpy.mock.calls[0]![0])) as {
+      summary: { failed: number; skipped: number; total: number }
+    }
+
+    expect(code).toBe(1)
+    expect(fetchSpy).toHaveBeenCalledOnce()
+    expect(report.summary).toMatchObject({ total: 3, failed: 1, skipped: 2 })
     ws.cleanup()
   })
 
@@ -342,6 +481,39 @@ describe('command flows', () => {
 
     expect(Array.isArray(items)).toBe(true)
     expect(fetchSpy).toHaveBeenCalledOnce()
+    ws.cleanup()
+  })
+
+  it('client spaces concurrent mutation requests', async () => {
+    const ws = createWorkspace(['@scope/a'])
+    const config = createConfig(ws.cwd)
+    config.rateLimitMs = 20
+    config.requestTimeoutMs = 0
+    const client = createTrustedPublishClient(config)
+    const requestTimes: number[] = []
+    const fetchSpy = vi.fn(async () => {
+      requestTimes.push(Date.now())
+      return new Response('{}', { status: 200 })
+    })
+    const payload: TrustConfig = {
+      type: 'github',
+      claims: {
+        repository: 'owner/repo',
+        workflow_ref: {
+          file: 'release.yml',
+        },
+      },
+      permissions: ['createPackage'],
+    }
+    vi.stubGlobal('fetch', fetchSpy)
+
+    await Promise.all([
+      client.setup('@scope/a', payload),
+      client.setup('@scope/b', payload),
+    ])
+
+    expect(requestTimes).toHaveLength(2)
+    expect(requestTimes[1]! - requestTimes[0]!).toBeGreaterThanOrEqual(15)
     ws.cleanup()
   })
 })

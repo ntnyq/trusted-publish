@@ -116,6 +116,8 @@ The tables below document every CLI argument, including type, allowed values, wh
 | --allow-publish       | boolean | true/false     | No       | false   | Adds createPackage       |
 | --allow-stage-publish | boolean | true/false     | No       | false   | Adds createStagedPackage |
 
+Setup and verify require at least one permission from CLI flags or config.
+
 ### Revoke-only Argument
 
 | Argument  | Type   | Allowed Values | Required for | Default | Description                      |
@@ -137,8 +139,8 @@ The tables below document every CLI argument, including type, allowed values, wh
 
 Use the exported Config type to describe your config file structure. It supports:
 
-- All fields from Partial<TrustedPublishConfig>
-- An optional profiles field (used with --profile overrides)
+- Partial runtime fields, including partial nested discovery options
+- An optional profiles field containing the same partial override shape
 
 ### defineConfig Helper
 

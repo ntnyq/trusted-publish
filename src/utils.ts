@@ -1,7 +1,11 @@
 import { access } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import type { TrustedPublishConfig, TrustPermission } from './core/types'
+import type {
+  ConfigOverride,
+  TrustedPublishConfig,
+  TrustPermission,
+} from './core/types'
 
 /**
  * Checks whether a file system path is accessible.
@@ -97,14 +101,10 @@ export interface PermissionInput {
  * ```
  */
 export function parsePermissions(input: PermissionInput): TrustPermission[] {
-  if (input.permissions && input.permissions.length > 0) {
-    return input.permissions.filter(
-      (v): v is TrustPermission =>
-        v === 'createPackage' || v === 'createStagedPackage',
-    )
-  }
-
-  const permissions: TrustPermission[] = []
+  const permissions = (input.permissions || []).filter(
+    (value): value is TrustPermission =>
+      value === 'createPackage' || value === 'createStagedPackage',
+  )
   if (input.allowPublish) {
     permissions.push('createPackage')
   }
@@ -112,7 +112,7 @@ export function parsePermissions(input: PermissionInput): TrustPermission[] {
     permissions.push('createStagedPackage')
   }
 
-  return permissions.length > 0 ? permissions : ['createPackage']
+  return uniq(permissions)
 }
 
 /**
@@ -261,7 +261,7 @@ export async function runWithConcurrency<T, R>(
  */
 export function mergeConfig(
   base: TrustedPublishConfig,
-  patch: Partial<TrustedPublishConfig>,
+  patch: ConfigOverride,
 ): TrustedPublishConfig {
   return {
     ...base,

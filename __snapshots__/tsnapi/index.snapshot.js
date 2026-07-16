@@ -4,7 +4,8 @@
 // #region Classes
 export class NpmTrustClient {
   options
-  lastMutationAt
+  mutationQueue
+  nextMutationAt
   constructor(_) {}
   async list(_) {}
   async setup(_, _) {}

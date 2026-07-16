@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { loadConfig } from 'unconfig'
 import { CONFIG_FILES, DEFAULT_CONFIG } from '../constants'
 import {
@@ -11,7 +12,13 @@ import {
   uniq,
 } from '../utils'
 import type { PermissionInput } from '../utils'
-import type { Config, TrustedPublishConfig } from './types'
+import type {
+  Config,
+  ConfigOverride,
+  ProviderType,
+  TrustedPublishConfig,
+  TrustPermission,
+} from './types'
 
 /**
  * Input accepted by config loader before defaults are resolved.
@@ -21,7 +28,7 @@ export interface LoadConfigInput {
   config?: string
   profile?: string
   requestTimeoutMs?: number | string
-  provider?: string
+  provider?: ProviderType
   package?: string
   include?: string | string[]
   exclude?: string | string[]
@@ -43,7 +50,7 @@ export interface LoadConfigInput {
   contextIds?: string | string[]
   allowPublish?: boolean
   allowStagePublish?: boolean
-  permissions?: string[]
+  permissions?: TrustPermission[]
   concurrency?: number | string
   failFast?: boolean
   maxRetries?: number | string
@@ -108,10 +115,10 @@ export async function loadTrustedPublishConfig(
   cliInput: LoadConfigInput,
 ): Promise<TrustedPublishConfig> {
   const cwd = resolveCwd(cliInput.cwd)
-  const source =
-    cliInput.config && (await fileExists(cliInput.config))
-      ? cliInput.config
-      : undefined
+  const source = cliInput.config ? resolve(cwd, cliInput.config) : undefined
+  if (source && !(await fileExists(source))) {
+    throw new Error(`config file not found: ${source}`)
+  }
 
   const { config } = await loadConfig<Config>({
     cwd,
@@ -123,6 +130,12 @@ export async function loadTrustedPublishConfig(
   })
 
   const baseConfig = mergeConfig(DEFAULT_CONFIG, config || {})
+  if (
+    cliInput.profile &&
+    (!config?.profiles || !Object.hasOwn(config.profiles, cliInput.profile))
+  ) {
+    throw new Error(`config profile not found: ${cliInput.profile}`)
+  }
   const profileConfig =
     cliInput.profile && config?.profiles?.[cliInput.profile]
       ? mergeConfig(baseConfig, config.profiles[cliInput.profile] || {})
@@ -184,15 +197,13 @@ export async function loadTrustedPublishConfig(
     permissionInput.allowStagePublish = cliInput.allowStagePublish
   }
 
-  const patch: Partial<TrustedPublishConfig> = {
+  const patch: ConfigOverride = {
     cwd,
     requestTimeoutMs: toNumber(
       cliInput.requestTimeoutMs,
       profileConfig.requestTimeoutMs,
     ),
-    provider:
-      (cliInput.provider as TrustedPublishConfig['provider']) ||
-      profileConfig.provider,
+    provider: cliInput.provider || profileConfig.provider,
     include: uniq([...profileConfig.include, ...toArray(cliInput.include)]),
     exclude: uniq([...profileConfig.exclude, ...toArray(cliInput.exclude)]),
     ignores: uniq([...profileConfig.ignores, ...toArray(cliInput.ignores)]),
@@ -269,8 +280,8 @@ export async function loadTrustedPublishConfig(
  * ```
  */
 export function validateConfig(config: TrustedPublishConfig): void {
-  if (!config.provider) {
-    throw new Error('provider is required')
+  if (!['github', 'gitlab', 'circleci'].includes(config.provider)) {
+    throw new Error('provider must be github, gitlab, or circleci')
   }
 
   if (!Number.isFinite(config.concurrency) || config.concurrency < 1) {
@@ -306,10 +317,6 @@ export function validateConfig(config: TrustedPublishConfig): void {
 
   if (!URL.canParse(config.registry)) {
     throw new Error('registry must be a valid URL')
-  }
-
-  if (!config.permissions.length) {
-    throw new Error('at least one permission must be configured')
   }
 
   if (config.provider === 'github') {

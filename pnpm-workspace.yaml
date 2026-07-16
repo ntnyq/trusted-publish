@@ -1,1 +1,4 @@
 minimumReleaseAge: 0
+
+overrides:
+  'giget@1.2.5>tar': 7.5.16

@@ -19,6 +19,10 @@ import type {
  * ```
  */
 export function buildTrustConfig(config: TrustedPublishConfig): TrustConfig {
+  if (config.permissions.length === 0) {
+    throw new Error('at least one permission must be configured')
+  }
+
   return {
     type: config.provider,
     claims: buildClaims(config),

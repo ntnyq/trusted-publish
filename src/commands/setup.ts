@@ -1,10 +1,10 @@
 import { HTTP_STATUS_CONFLICT } from '../constants'
-import { NpmTrustClient } from '../core/client'
 import { discoverPackages } from '../core/discovery'
 import { buildTrustConfig } from '../core/providers'
 import { createReporter, summarize } from '../core/reporter'
+import { matchesTrustConfig } from '../core/trust-config'
 import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { runWithConcurrency } from '../utils'
+import { createCommandClient, runPackageCommand } from './shared'
 
 /**
  * Configures trusted publishers for selected packages.
@@ -19,21 +19,10 @@ import { runWithConcurrency } from '../utils'
  */
 export async function runSetup(config: TrustedPublishConfig): Promise<number> {
   const reporter = createReporter(config)
-  const client = new NpmTrustClient({
-    registry: config.registry,
-    requestTimeoutMs: config.requestTimeoutMs,
-    token: config.token,
-    otp: config.otp,
-    dryRun: config.dryRun,
-    maxRetries: config.maxRetries,
-    retryDelayMs: config.retryDelayMs,
-    maxRetryDelayMs: config.maxRetryDelayMs,
-    rateLimitMs: config.rateLimitMs,
-  })
+  const client = createCommandClient(config)
 
   const trustConfig = buildTrustConfig(config)
   const packages = await discoverPackages(config)
-  const results: PackageCommandResult[] = []
 
   reporter.title('npm trusted publisher setup')
   reporter.info(`Selected packages: ${packages.length}`)
@@ -41,81 +30,56 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
   reporter.info(`Registry: ${config.registry}`)
   reporter.info(`Mode: ${config.dryRun ? 'dry-run' : 'apply'}`)
 
-  const processed = await runWithConcurrency(
+  const results = await runPackageCommand(
+    config,
     packages,
-    config.concurrency,
-    async (pkg, index) => {
+    reporter,
+    async pkg => {
       if (config.dryRun) {
-        const result: PackageCommandResult = {
+        return {
           packageName: pkg.name,
           packageDir: pkg.dir,
           status: 'skipped',
           message: 'dry-run (no changes applied)',
-        }
-        reporter.result(result)
-        return { index, result }
+        } satisfies PackageCommandResult
       }
 
       try {
         await client.setup(pkg.name, trustConfig)
-        const result: PackageCommandResult = {
+        return {
           packageName: pkg.name,
           packageDir: pkg.dir,
           status: 'configured',
           message: 'trusted publisher configured',
-        }
-        reporter.result(result)
-        return { index, result }
+        } satisfies PackageCommandResult
       } catch (error) {
         const { statusCode } = error as { statusCode?: number }
         if (statusCode === HTTP_STATUS_CONFLICT) {
-          const result: PackageCommandResult = {
+          const existing = await client.list(pkg.name)
+          const match = existing.find(item =>
+            matchesTrustConfig(item, trustConfig),
+          )
+          if (match) {
+            return {
+              packageName: pkg.name,
+              packageDir: pkg.dir,
+              status: 'already',
+              message: 'matching trust configuration already exists',
+              ...(match.id ? { trustId: match.id } : {}),
+            } satisfies PackageCommandResult
+          }
+
+          return {
             packageName: pkg.name,
             packageDir: pkg.dir,
-            status: 'already',
-            message: 'trust configuration already exists',
-          }
-          reporter.result(result)
-          return { index, result }
+            status: 'failed',
+            message: 'an existing trust configuration does not match',
+          } satisfies PackageCommandResult
         }
-
-        const result: PackageCommandResult = {
-          packageName: pkg.name,
-          packageDir: pkg.dir,
-          status: 'failed',
-          message: (error as Error).message,
-        }
-        reporter.result(result)
-        return { index, result }
+        throw error
       }
-    },
-    {
-      failFast: config.failFast,
-      shouldStop: ({ result }) => result.status === 'failed',
     },
   )
-
-  const processedIndexes = new Set<number>()
-  for (const item of processed) {
-    processedIndexes.add(item.index)
-    results.push(item.result)
-  }
-
-  if (config.failFast && results.length < packages.length) {
-    for (const [index, pkg] of packages.entries()) {
-      if (processedIndexes.has(index)) {
-        continue
-      }
-      const skippedResult: PackageCommandResult = {
-        packageName: pkg.name,
-        packageDir: pkg.dir,
-        status: 'skipped',
-        message: 'skipped due to fail-fast stop',
-      }
-      results.push(skippedResult)
-      reporter.result(skippedResult)
-    }
-  }
 
   const summary = summarize(results)
   reporter.summary(summary, results)

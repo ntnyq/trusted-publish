@@ -32,7 +32,8 @@ export interface NpmTrustRemoteItem extends TrustConfig {
  */
 export class NpmTrustClient {
   private readonly options: ClientOptions
-  private lastMutationAt = 0
+  private mutationQueue: Promise<void> = Promise.resolve()
+  private nextMutationAt = 0
 
   /**
    * Creates a new npm trust client.
@@ -189,9 +190,6 @@ export class NpmTrustClient {
       }
 
       if (res.ok) {
-        if (init.method && init.method !== 'GET') {
-          this.lastMutationAt = Math.max(this.lastMutationAt, Date.now())
-        }
         return res
       }
 
@@ -246,10 +244,19 @@ export class NpmTrustClient {
       return
     }
 
-    const elapsed = Date.now() - this.lastMutationAt
-    const waitMs = this.options.rateLimitMs - elapsed
-    if (waitMs > 0) {
+    const previous = this.mutationQueue
+    const queueGate: { release?: () => void } = {}
+    this.mutationQueue = new Promise(resolve => {
+      queueGate.release = resolve
+    })
+
+    await previous
+    try {
+      const waitMs = Math.max(0, this.nextMutationAt - Date.now())
       await sleep(waitMs)
+      this.nextMutationAt = Date.now() + this.options.rateLimitMs
+    } finally {
+      queueGate.release?.()
     }
   }
 

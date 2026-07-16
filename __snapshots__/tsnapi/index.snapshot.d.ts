@@ -14,8 +14,11 @@ export interface ClaimsInput {
   vcsOrigin?: string;
   contextIds?: string[];
 }
-export interface Config extends Partial<TrustedPublishConfig> {
-  profiles?: Record<string, Partial<TrustedPublishConfig>>;
+export interface Config extends ConfigOverride {
+  profiles?: Record<string, ConfigOverride>;
+}
+export interface ConfigOverride extends Omit<Partial<TrustedPublishConfig>, 'discovery'> {
+  discovery?: Partial<DiscoveryConfig>;
 }
 export interface DiscoveryConfig {
   fromWorkspaces: boolean;
@@ -28,7 +31,7 @@ export interface LoadConfigInput {
   config?: string;
   profile?: string;
   requestTimeoutMs?: number | string;
-  provider?: string;
+  provider?: ProviderType;
   package?: string;
   include?: string | string[];
   exclude?: string | string[];
@@ -50,7 +53,7 @@ export interface LoadConfigInput {
   contextIds?: string | string[];
   allowPublish?: boolean;
   allowStagePublish?: boolean;
-  permissions?: string[];
+  permissions?: TrustPermission[];
   concurrency?: number | string;
   failFast?: boolean;
   maxRetries?: number | string;
@@ -88,7 +91,7 @@ export interface PermissionInput {
   allowStagePublish?: boolean;
 }
 export interface RevokeOptions {
-  id?: string;
+  id: string;
 }
 export interface RunWithConcurrencyOptions<R, T> {
   failFast?: boolean;
@@ -182,7 +185,8 @@ export type TrustPermission = 'createPackage' | 'createStagedPackage';
 // #region Classes
 export declare class NpmTrustClient {
   private readonly options;
-  private lastMutationAt;
+  private mutationQueue;
+  private nextMutationAt;
   constructor(_: ClientOptions);
   list(_: string): Promise<NpmTrustRemoteItem[]>;
   setup(_: string, _: TrustConfig): Promise<Response>;
@@ -216,7 +220,7 @@ export declare function discoverPackages(_: TrustedPublishConfig): Promise<Packa
 export declare function discoverTrustedPublishPackages(_: NodeApiRuntimeConfig): Promise<PackageMeta[]>;
 export declare function listTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
 export declare function loadTrustedPublishConfig(_: LoadConfigInput): Promise<TrustedPublishConfig>;
-export declare function mergeConfig(_: TrustedPublishConfig, _: Partial<TrustedPublishConfig>): TrustedPublishConfig;
+export declare function mergeConfig(_: TrustedPublishConfig, _: ConfigOverride): TrustedPublishConfig;
 export declare function normalizeRegistry(_: string): string;
 export declare function parsePermissions(_: PermissionInput): TrustPermission[];
 export declare function resolveCwd(_?: string): string;

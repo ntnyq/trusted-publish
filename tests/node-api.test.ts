@@ -25,6 +25,7 @@ function createWorkspace(): { cwd: string; cleanup: () => void } {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('node api exports', () => {

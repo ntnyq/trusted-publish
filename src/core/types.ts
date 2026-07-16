@@ -139,13 +139,20 @@ export interface TrustedPublishConfig {
 }
 
 /**
+ * Partial runtime values accepted by base config and named profiles.
+ */
+export interface ConfigOverride extends Omit<
+  Partial<TrustedPublishConfig>,
+  'discovery'
+> {
+  discovery?: Partial<DiscoveryConfig>
+}
+
+/**
  * User-facing configuration file type.
  *
  * This type is intended for values authored in
  * trusted-publish.config.{ts,mts,js,mjs,cjs,json}.
- *
- * It allows partial runtime fields and optional named profiles
- * that can override base values when --profile is used.
  *
  * @example
  * const config: Config = {
@@ -162,8 +169,8 @@ export interface TrustedPublishConfig {
  *   },
  * }
  */
-export interface Config extends Partial<TrustedPublishConfig> {
-  profiles?: Record<string, Partial<TrustedPublishConfig>>
+export interface Config extends ConfigOverride {
+  profiles?: Record<string, ConfigOverride>
 }
 
 /**
