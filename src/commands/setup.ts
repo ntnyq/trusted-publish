@@ -1,11 +1,10 @@
+import { HTTP_STATUS_CONFLICT } from '../constants'
 import { NpmTrustClient } from '../core/client'
 import { discoverPackages } from '../core/discovery'
 import { buildTrustConfig } from '../core/providers'
 import { createReporter, summarize } from '../core/reporter'
 import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { runWithConcurrency } from '../core/utils'
-
-const STATUS_CONFLICT = 409
+import { runWithConcurrency } from '../utils'
 
 /**
  * Configures trusted publishers for selected packages.
@@ -69,7 +68,7 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
         return { index, result }
       } catch (error) {
         const { statusCode } = error as { statusCode?: number }
-        if (statusCode === STATUS_CONFLICT) {
+        if (statusCode === HTTP_STATUS_CONFLICT) {
           const result: PackageCommandResult = {
             packageName: pkg.name,
             packageDir: pkg.dir,

@@ -1,9 +1,9 @@
-import type { TrustedPublishConfig } from './types'
+import type { CommandResultStatus, TrustedPublishConfig } from './core/types'
 
 /**
  * Default ignore globs used while searching package manifests.
  */
-export const DEFAULT_IGNORES = [
+export const DEFAULT_IGNORES: string[] = [
   '**/node_modules/**',
   '**/.git/**',
   '**/dist/**',
@@ -46,7 +46,7 @@ export const DEFAULT_CONFIG: TrustedPublishConfig = {
 /**
  * Supported configuration file names resolved by unconfig.
  */
-export const CONFIG_FILES = [
+export const CONFIG_FILES: string[] = [
   'trusted-publish.config.ts',
   'trusted-publish.config.mts',
   'trusted-publish.config.js',
@@ -54,3 +54,31 @@ export const CONFIG_FILES = [
   'trusted-publish.config.cjs',
   'trusted-publish.config.json',
 ]
+
+/**
+ * HTTP status returned when a trusted publisher already exists.
+ */
+export const HTTP_STATUS_CONFLICT = 409
+
+/**
+ * HTTP status returned when the registry rate limit is exceeded.
+ */
+export const HTTP_STATUS_TOO_MANY_REQUESTS = 429
+
+/**
+ * Lowest HTTP status representing a server error.
+ */
+export const HTTP_STATUS_SERVER_ERROR_MIN = 500
+
+/**
+ * Terminal prefixes for package command result statuses.
+ */
+export const RESULT_STATUS_PREFIXES: Readonly<
+  Record<CommandResultStatus, string>
+> = {
+  configured: '[OK]',
+  already: '[SKIP]',
+  revoked: '[OK]',
+  skipped: '[SKIP]',
+  failed: '[FAIL]',
+}

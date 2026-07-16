@@ -1,16 +1,17 @@
-import { existsSync } from 'node:fs'
 import { loadConfig } from 'unconfig'
-import { CONFIG_FILES, DEFAULT_CONFIG } from './constants'
-import type { Config, TrustedPublishConfig } from './types'
+import { CONFIG_FILES, DEFAULT_CONFIG } from '../constants'
 import {
+  fileExists,
   mergeConfig,
   normalizeRegistry,
   parsePermissions,
   resolveCwd,
   toArray,
+  toNumber,
   uniq,
-} from './utils'
-import type { PermissionInput } from './utils'
+} from '../utils'
+import type { PermissionInput } from '../utils'
+import type { Config, TrustedPublishConfig } from './types'
 
 /**
  * Input accepted by config loader before defaults are resolved.
@@ -108,7 +109,9 @@ export async function loadTrustedPublishConfig(
 ): Promise<TrustedPublishConfig> {
   const cwd = resolveCwd(cliInput.cwd)
   const source =
-    cliInput.config && existsSync(cliInput.config) ? cliInput.config : undefined
+    cliInput.config && (await fileExists(cliInput.config))
+      ? cliInput.config
+      : undefined
 
   const { config } = await loadConfig<Config>({
     cwd,
@@ -341,20 +344,4 @@ export function validateConfig(config: TrustedPublishConfig): void {
       throw new Error('circleci provider requires vcsOrigin')
     }
   }
-}
-
-function toNumber(
-  value: number | string | undefined,
-  fallback: number,
-): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-  if (typeof value === 'string' && value.trim()) {
-    const parsed = Number(value)
-    if (Number.isFinite(parsed)) {
-      return parsed
-    }
-  }
-  return fallback
 }

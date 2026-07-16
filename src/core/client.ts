@@ -1,5 +1,9 @@
+import {
+  HTTP_STATUS_SERVER_ERROR_MIN,
+  HTTP_STATUS_TOO_MANY_REQUESTS,
+} from '../constants'
+import { sleep } from '../utils'
 import type { TrustConfig } from './types'
-import { sleep } from './utils'
 
 /**
  * Runtime options for npm trust API client.
@@ -250,7 +254,10 @@ export class NpmTrustClient {
   }
 
   private isRetryableStatus(statusCode: number): boolean {
-    return statusCode === 429 || statusCode >= 500
+    return (
+      statusCode === HTTP_STATUS_TOO_MANY_REQUESTS ||
+      statusCode >= HTTP_STATUS_SERVER_ERROR_MIN
+    )
   }
 
   private getRetryAfterMs(response: Response): number {

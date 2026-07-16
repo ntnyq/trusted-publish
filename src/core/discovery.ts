@@ -1,7 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { glob } from 'tinyglobby'
-import { DEFAULT_IGNORES } from './constants'
+import { DEFAULT_IGNORES } from '../constants'
+import { fileExists } from '../utils'
 import type { PackageMeta, TrustedPublishConfig } from './types'
 
 interface Manifest {
@@ -47,7 +48,7 @@ export async function discoverPackages(
 
   const packages: PackageMeta[] = []
   for (const manifestPath of manifests) {
-    const pkg = parsePackage(manifestPath)
+    const pkg = await parsePackage(manifestPath)
     if (!pkg?.name) {
       continue
     }
@@ -64,8 +65,8 @@ async function discoverFromWorkspaces(
   const patterns = new Set<string>()
 
   const pnpmWorkspacePath = resolve(cwd, 'pnpm-workspace.yaml')
-  if (existsSync(pnpmWorkspacePath)) {
-    const raw = readFileSync(pnpmWorkspacePath, 'utf8')
+  if (await fileExists(pnpmWorkspacePath)) {
+    const raw = await readFile(pnpmWorkspacePath, 'utf8')
     for (const line of raw.split(/\r?\n/)) {
       const match = line.match(/^\s*-\s*['"]?(.+?)['"]?\s*$/)
       if (match?.[1]) {
@@ -75,9 +76,9 @@ async function discoverFromWorkspaces(
   }
 
   const rootPkgPath = resolve(cwd, 'package.json')
-  if (existsSync(rootPkgPath)) {
+  if (await fileExists(rootPkgPath)) {
     try {
-      const raw = readFileSync(rootPkgPath, 'utf8')
+      const raw = await readFile(rootPkgPath, 'utf8')
       const pkg = JSON.parse(raw) as {
         workspaces?: string[] | { packages?: string[] }
       }
@@ -96,8 +97,8 @@ async function discoverFromWorkspaces(
   }
 
   const bunPath = resolve(cwd, 'bunfig.toml')
-  if (existsSync(bunPath)) {
-    const raw = readFileSync(bunPath, 'utf8')
+  if (await fileExists(bunPath)) {
+    const raw = await readFile(bunPath, 'utf8')
     const match = raw.match(/workspaces\s*=\s*\[(.*?)\]/s)
     if (match?.[1]) {
       for (const item of match[1].split(',')) {
@@ -130,9 +131,9 @@ async function discoverFromWorkspaces(
   return manifests
 }
 
-function parsePackage(manifestPath: string): PackageMeta | null {
+async function parsePackage(manifestPath: string): Promise<PackageMeta | null> {
   try {
-    const raw = readFileSync(manifestPath, 'utf8')
+    const raw = await readFile(manifestPath, 'utf8')
     const pkg = JSON.parse(raw) as Manifest
     if (!pkg.name) {
       return null

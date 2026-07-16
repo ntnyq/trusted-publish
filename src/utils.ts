@@ -1,6 +1,22 @@
+import { access } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import type { TrustedPublishConfig, TrustPermission } from './types'
+import type { TrustedPublishConfig, TrustPermission } from './core/types'
+
+/**
+ * Checks whether a file system path is accessible.
+ *
+ * @param path - File system path to check.
+ * @returns Whether the path can be accessed.
+ */
+export async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path)
+    return true
+  } catch {
+    return false
+  }
+}
 
 /**
  * Normalizes CLI/config values that can be single string or string array.
@@ -113,6 +129,39 @@ export function parsePermissions(input: PermissionInput): TrustPermission[] {
  */
 export function uniq<T>(arr: T[]): T[] {
   return [...new Set(arr)]
+}
+
+/**
+ * Converts a finite number or numeric string to a number.
+ *
+ * @param value - Number-like input.
+ * @param fallback - Value returned when the input is invalid.
+ * @returns Parsed finite number or the fallback.
+ */
+export function toNumber(
+  value: number | string | undefined,
+  fallback: number,
+): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+  return fallback
+}
+
+/**
+ * Serializes a value with recursively sorted object keys.
+ *
+ * @param value - Value to serialize.
+ * @returns Stable JSON text.
+ */
+export function stableStringify(value: unknown): string {
+  return JSON.stringify(normalizeStable(value))
 }
 
 /**
@@ -234,4 +283,21 @@ export function mergeConfig(
     ignores: patch.ignores || base.ignores,
     permissions: patch.permissions || base.permissions,
   }
+}
+
+function normalizeStable(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeStable(item))
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).toSorted(
+      ([left], [right]) => left.localeCompare(right),
+    )
+    return Object.fromEntries(
+      entries.map(([key, item]) => [key, normalizeStable(item)]),
+    )
+  }
+
+  return value
 }

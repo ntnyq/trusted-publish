@@ -2,7 +2,7 @@ import { NpmTrustClient } from '../core/client'
 import { discoverPackages } from '../core/discovery'
 import { createReporter, summarize } from '../core/reporter'
 import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { runWithConcurrency } from '../core/utils'
+import { runWithConcurrency } from '../utils'
 
 /**
  * Revoke command options.

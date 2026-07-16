@@ -3,28 +3,7 @@ import { discoverPackages } from '../core/discovery'
 import { buildTrustConfig } from '../core/providers'
 import { createReporter, summarize } from '../core/reporter'
 import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { runWithConcurrency } from '../core/utils'
-
-function normalizeStable(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(item => normalizeStable(item))
-  }
-
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>).toSorted(
-      ([left], [right]) => left.localeCompare(right),
-    )
-    return Object.fromEntries(
-      entries.map(([key, item]) => [key, normalizeStable(item)]),
-    )
-  }
-
-  return value
-}
-
-function stableStringify(value: unknown): string {
-  return JSON.stringify(normalizeStable(value))
-}
+import { runWithConcurrency, stableStringify } from '../utils'
 
 /**
  * Verifies expected trust payload exists remotely for each selected package.

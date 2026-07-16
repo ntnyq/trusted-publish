@@ -218,4 +218,4 @@ export async function revokeTrustedPublish(
   return runRevoke(config, options)
 }
 
-export type { RevokeOptions }
+export type { RevokeOptions } from './commands/revoke'

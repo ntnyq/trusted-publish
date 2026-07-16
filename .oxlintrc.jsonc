@@ -166,6 +166,7 @@
         "no-empty-function": "off",
         "no-magic-numbers": "off",
         "no-undefined": "off",
+        "node/no-sync": "off",
         "import/no-nodejs-modules": "off",
         "typescript/ban-ts-comment": "off",
         "typescript/no-non-null-assertion": "off",

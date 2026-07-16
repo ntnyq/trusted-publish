@@ -1,4 +1,5 @@
 import { consola } from 'consola'
+import { RESULT_STATUS_PREFIXES } from '../constants'
 import type {
   PackageCommandResult,
   Summary,
@@ -46,17 +47,10 @@ export function createReporter(config: TrustedPublishConfig) {
       if (config.json) {
         return
       }
-      const prefixMap = {
-        configured: '[OK]',
-        already: '[SKIP]',
-        revoked: '[OK]',
-        skipped: '[SKIP]',
-        failed: '[FAIL]',
-      } as const
       const method = result.status === 'failed' ? consola.error : consola.log
       if (!config.silent) {
         method(
-          `${prefixMap[result.status]} ${result.packageName} (${result.packageDir}) -> ${result.message}`,
+          `${RESULT_STATUS_PREFIXES[result.status]} ${result.packageName} (${result.packageDir}) -> ${result.message}`,
         )
       }
     },
