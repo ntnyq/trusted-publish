@@ -26,29 +26,24 @@ export async function runVerify(config: TrustedPublishConfig): Promise<number> {
   reporter.title('npm trusted publisher verify')
   reporter.info(`Selected packages: ${packages.length}`)
 
-  const results = await runPackageCommand(
-    config,
-    packages,
-    reporter,
-    async pkg => {
-      const remote = await client.list(pkg.name)
-      const hit = remote.some(item => matchesTrustConfig(item, expected))
+  const results = await runPackageCommand(config, packages, reporter, async pkg => {
+    const remote = await client.list(pkg.name)
+    const hit = remote.some(item => matchesTrustConfig(item, expected))
 
-      return hit
-        ? {
-            packageName: pkg.name,
-            packageDir: pkg.dir,
-            status: 'configured',
-            message: 'configuration matches expected payload',
-          }
-        : {
-            packageName: pkg.name,
-            packageDir: pkg.dir,
-            status: 'failed',
-            message: 'no matching trusted publisher configuration',
-          }
-    },
-  )
+    return hit
+      ? {
+          packageName: pkg.name,
+          packageDir: pkg.dir,
+          status: 'configured',
+          message: 'configuration matches expected payload',
+        }
+      : {
+          packageName: pkg.name,
+          packageDir: pkg.dir,
+          status: 'failed',
+          message: 'no matching trusted publisher configuration',
+        }
+  })
 
   const summary = summarize(results)
   reporter.summary(summary, results)

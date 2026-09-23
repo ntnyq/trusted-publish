@@ -1,15 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "eslint",
-    "import",
-    "jsdoc",
-    "node",
-    "promise",
-    "oxc",
-    "typescript",
-    "unicorn",
-  ],
+  "plugins": ["eslint", "import", "jsdoc", "node", "promise", "oxc", "typescript", "unicorn"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -18,12 +9,7 @@
     "style": "warn",
     "restriction": "warn",
   },
-  "ignorePatterns": [
-    "**/dist/**",
-    "**/node_modules/**",
-    "**/fixtures/**",
-    "**/__snapshots__/**",
-  ],
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/fixtures/**", "**/__snapshots__/**"],
   "rules": {
     "no-ternary": "off",
     "no-undefined": "off",
@@ -50,10 +36,7 @@
     "unicorn/no-null": "off",
     "unicorn/import-style": "off",
     "func-style": ["warn", "declaration", { "allowArrowFunctions": true }],
-    "no-duplicate-imports": [
-      "warn",
-      { "includeExports": true, "allowSeparateTypeImports": true },
-    ],
+    "no-duplicate-imports": ["warn", { "includeExports": true, "allowSeparateTypeImports": true }],
     "no-magic-numbers": [
       "warn",
       {
@@ -86,6 +69,7 @@
         "skipBlankLines": true,
       },
     ],
+    "one-var": ["warn", "never"],
   },
   "overrides": [
     {

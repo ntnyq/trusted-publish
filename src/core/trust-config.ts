@@ -3,13 +3,10 @@ import type { TrustConfig } from './types'
 
 const CIRCLECI_CONTEXT_IDS_KEY = 'oidc.circleci.com/context-ids'
 
-export function matchesTrustConfig(
-  actual: TrustConfig,
-  expected: TrustConfig,
-): boolean {
+export function matchesTrustConfig(actual: TrustConfig, expected: TrustConfig): boolean {
   return (
-    stableStringify(normalizeTrustConfig(actual)) ===
-    stableStringify(normalizeTrustConfig(expected))
+    stableStringify(normalizeTrustConfig(actual))
+    === stableStringify(normalizeTrustConfig(expected))
   )
 }
 
@@ -29,8 +26,6 @@ function normalizeTrustConfig(config: TrustConfig): object {
 
 function sortUnique(values: unknown[]): string[] {
   return [
-    ...new Set(
-      values.filter((value): value is string => typeof value === 'string'),
-    ),
+    ...new Set(values.filter((value): value is string => typeof value === 'string')),
   ].toSorted()
 }

@@ -9,26 +9,20 @@ import { loadTrustedPublishConfig } from './core/config'
 
 const cli = configureCliOptions(cac(name), version)
 
-cli
-  .command('setup', 'configure trusted publisher for selected packages')
-  .action(async () => {
-    const config = await loadTrustedPublishConfig(cli.options)
-    process.exitCode = await runSetup(config)
-  })
+cli.command('setup', 'configure trusted publisher for selected packages').action(async () => {
+  const config = await loadTrustedPublishConfig(cli.options)
+  process.exitCode = await runSetup(config)
+})
 
-cli
-  .command('list', 'list trusted publisher configs for selected packages')
-  .action(async () => {
-    const config = await loadTrustedPublishConfig(cli.options)
-    process.exitCode = await runList(config)
-  })
+cli.command('list', 'list trusted publisher configs for selected packages').action(async () => {
+  const config = await loadTrustedPublishConfig(cli.options)
+  process.exitCode = await runList(config)
+})
 
-cli
-  .command('verify', 'verify expected trusted publisher config exists')
-  .action(async () => {
-    const config = await loadTrustedPublishConfig(cli.options)
-    process.exitCode = await runVerify(config)
-  })
+cli.command('verify', 'verify expected trusted publisher config exists').action(async () => {
+  const config = await loadTrustedPublishConfig(cli.options)
+  process.exitCode = await runVerify(config)
+})
 
 cli
   .command('revoke', 'revoke trusted publisher config by id')

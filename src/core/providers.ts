@@ -37,9 +37,7 @@ function buildClaims(config: TrustedPublishConfig): TrustClaims {
       workflow_ref: {
         file: config.claims.workflow || config.claims.file!,
       },
-      ...(config.claims.environment
-        ? { environment: config.claims.environment }
-        : {}),
+      ...(config.claims.environment ? { environment: config.claims.environment } : {}),
     } satisfies TrustClaimsGitHub
   }
 
@@ -49,17 +47,14 @@ function buildClaims(config: TrustedPublishConfig): TrustClaims {
       ci_config_ref_uri: {
         file: config.claims.file!,
       },
-      ...(config.claims.environment
-        ? { environment: config.claims.environment }
-        : {}),
+      ...(config.claims.environment ? { environment: config.claims.environment } : {}),
     } satisfies TrustClaimsGitLab
   }
 
   return {
     'oidc.circleci.com/org-id': config.claims.orgId!,
     'oidc.circleci.com/project-id': config.claims.projectId!,
-    'oidc.circleci.com/pipeline-definition-id':
-      config.claims.pipelineDefinitionId!,
+    'oidc.circleci.com/pipeline-definition-id': config.claims.pipelineDefinitionId!,
     'oidc.circleci.com/vcs-origin': config.claims.vcsOrigin!,
     ...(config.claims.contextIds?.length
       ? { 'oidc.circleci.com/context-ids': config.claims.contextIds }

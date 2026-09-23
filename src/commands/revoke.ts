@@ -40,29 +40,24 @@ export async function runRevoke(
   reporter.info(`Selected packages: ${packages.length}`)
   reporter.info(`Trust ID: ${trustId}`)
 
-  const results = await runPackageCommand(
-    config,
-    packages,
-    reporter,
-    async pkg => {
-      if (config.dryRun) {
-        return {
-          packageName: pkg.name,
-          packageDir: pkg.dir,
-          status: 'skipped',
-          message: `dry-run revoke id=${trustId}`,
-        } satisfies PackageCommandResult
-      }
-
-      await client.revoke(pkg.name, trustId)
+  const results = await runPackageCommand(config, packages, reporter, async pkg => {
+    if (config.dryRun) {
       return {
         packageName: pkg.name,
         packageDir: pkg.dir,
-        status: 'revoked',
-        message: 'trust configuration revoked',
+        status: 'skipped',
+        message: `dry-run revoke id=${trustId}`,
       } satisfies PackageCommandResult
-    },
-  )
+    }
+
+    await client.revoke(pkg.name, trustId)
+    return {
+      packageName: pkg.name,
+      packageDir: pkg.dir,
+      status: 'revoked',
+      message: 'trust configuration revoked',
+    } satisfies PackageCommandResult
+  })
 
   const summary = summarize(results)
   reporter.summary(summary, results)

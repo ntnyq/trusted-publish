@@ -1,64 +1,42 @@
-# AGENTS
+# Repository Guidelines
 
-Agent working guide for this repository.
+## Project Structure & Module Organization
 
-## Project Snapshot
+`trusted-publish` provides a CLI and Node API for managing npm trusted publishers.
 
-- Node ESM TypeScript CLI for configuring npm Trusted Publisher relationships across single-package and monorepo setups.
-- Main user-facing entrypoints are the CLI in [src/cli.ts](src/cli.ts) and the programmatic API in [src/node-api.ts](src/node-api.ts).
-- Start with [README.md](README.md) for feature-level behavior and option semantics.
+- `src/cli.ts` and `src/cli-options.ts` handle CLI registration and options; `bin.mjs` is the executable launcher.
+- `src/node-api.ts` implements the programmatic API; `src/index.ts` defines public exports.
+- `src/commands/` implements setup, list, verify, and revoke operations.
+- `src/core/` contains configuration, package discovery, registry access, provider payloads, reporting, and shared types.
+- `tests/` contains unit and command-flow tests. `__snapshots__/tsnapi/` tracks generated API snapshots.
+- `dist/` is generated build output; `.github/workflows/` contains CI and release automation.
 
-## Essential Commands
+## Build, Test, and Development Commands
 
-- Install deps: `pnpm install`
-- Build: `pnpm run build`
-- Dev watch build: `pnpm run dev`
-- Test: `pnpm run test`
-- Typecheck: `pnpm run typecheck`
-- Lint: `pnpm run lint`
-- Format check: `pnpm run format:check`
-- Full pre-release gate: `pnpm run release:check`
+Use Node.js LTS and the pnpm version pinned in `package.json`.
 
-## Code Map
+- `pnpm install --frozen-lockfile`: install dependencies reproducibly.
+- `pnpm build`: bundle with tsdown, generate declarations, and update API snapshots.
+- `pnpm dev`: rebuild on source changes.
+- `pnpm cli --help`: inspect the built CLI; build first.
+- `pnpm cli:dry-run --provider github --repository owner/repo --workflow release.yml --allow-publish`: preview setup.
+- `pnpm test`: run Vitest once; watch mode is disabled by default.
+- `pnpm test tests/commands.test.ts`: run a focused test file.
+- `pnpm format`, `pnpm format:check`: apply or verify Oxfmt formatting.
+- `pnpm lint`, `pnpm typecheck`: run Oxlint and TypeScript checks.
 
-- CLI command wiring and option surface: [src/cli.ts](src/cli.ts)
-- Public exports: [src/index.ts](src/index.ts)
-- Node API wrappers: [src/node-api.ts](src/node-api.ts)
-- Command implementations: [src/commands/setup.ts](src/commands/setup.ts), [src/commands/list.ts](src/commands/list.ts), [src/commands/verify.ts](src/commands/verify.ts), [src/commands/revoke.ts](src/commands/revoke.ts)
-- Core domain/types/provider claim builders: [src/core/types.ts](src/core/types.ts), [src/core/providers.ts](src/core/providers.ts)
-- Config loading and defaults: [src/core/config.ts](src/core/config.ts), [src/core/constants.ts](src/core/constants.ts)
-- HTTP/retry/rate-limit behavior: [src/core/client.ts](src/core/client.ts)
-- Package discovery logic: [src/core/discovery.ts](src/core/discovery.ts)
-- Reporting/output behavior: [src/core/reporter.ts](src/core/reporter.ts)
+## Coding Style & Naming Conventions
 
-## Repository Conventions
+Write strict TypeScript using ES modules. Follow two-space indentation, LF endings, single quotes, no semicolons, trailing commas, and a 100-column formatting width. Let Oxfmt organize imports. Use kebab-case filenames, camelCase functions and variables, PascalCase types, and uppercase snake_case shared constants. Use `import type` for type-only imports. Husky runs nano-staged formatting and lint fixes before commits.
 
-- ESM-first project (`"type": "module"`) with strict TypeScript config in [tsconfig.json](tsconfig.json).
-- Bundling uses tsdown and API snapshot generation via tsnapi plugin in [tsdown.config.ts](tsdown.config.ts).
-- Lint/format stack is Oxlint + Oxfmt (not ESLint/Prettier), configured in [.oxlintrc.jsonc](.oxlintrc.jsonc) and [.oxfmtrc.jsonc](.oxfmtrc.jsonc).
-- Tests are Vitest-based and heavily mock `fetch`; see [tests/commands.test.ts](tests/commands.test.ts) and [tests/node-api.test.ts](tests/node-api.test.ts).
+## Testing Guidelines
 
-## Implementation Expectations For Agents
+Name tests `tests/<feature>.test.ts` and use Vitest `describe`/`it` blocks. Mock registry requests and use temporary workspace fixtures with cleanup. Cover changed behavior, including error handling and dry-run guarantees. No coverage threshold is configured. Review API snapshot changes after builds. CI builds and tests on Linux, Windows, and macOS with Node 22, 24, and 26.
 
-- Keep provider-specific claim behavior aligned with discriminated provider types in [src/core/types.ts](src/core/types.ts) and claim construction in [src/core/providers.ts](src/core/providers.ts).
-- Preserve CLI option names and compatibility in [src/cli.ts](src/cli.ts) when adding config fields.
-- Keep config precedence predictable: file/profile + CLI overrides via [src/core/config.ts](src/core/config.ts).
-- Maintain retry and rate-limit semantics in [src/core/client.ts](src/core/client.ts), especially around 429/5xx and retry-after handling.
-- Prefer small, targeted changes; avoid unrelated refactors.
+## Commit & Pull Request Guidelines
 
-## Validation Checklist Before Finishing
+Follow existing commit prefixes: `fix:`, `refactor:`, `docs:`, and `chore:`. Keep subjects short and imperative. PRs should explain the problem, resulting behavior, and validation performed; link related issues when applicable. Update README examples for CLI or API changes. Run formatting checks, lint, typecheck, build, and tests before requesting review.
 
-1. Run `pnpm run test` for behavior changes.
-2. Run `pnpm run typecheck` for type-affecting edits.
-3. Run `pnpm run lint` and `pnpm run format:check` before finalizing.
-4. If public API surface changed, verify snapshots in [**snapshots**/tsnapi](__snapshots__/tsnapi).
+## Security & Configuration
 
-## Useful References
-
-- Product behavior and CLI usage examples: [README.md](README.md)
-- CI pipeline expectations: [.github/workflows](.github/workflows)
-
-## Notes
-
-- No prior local session friction patterns were found in chronicle history for this repository.
-- Use `/chronicle improve` periodically to refine these instructions from real session friction.
+Keep npm credentials out of tracked files and test fixtures. Use `NPM_TOKEN` and `NPM_OTP` for local authentication. Preview setup with `--dry-run` before applying registry changes.

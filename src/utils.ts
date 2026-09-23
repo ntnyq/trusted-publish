@@ -1,11 +1,7 @@
 import { access } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import type {
-  ConfigOverride,
-  TrustedPublishConfig,
-  TrustPermission,
-} from './core/types'
+import type { ConfigOverride, TrustedPublishConfig, TrustPermission } from './core/types'
 
 /**
  * Checks whether a file system path is accessible.
@@ -138,10 +134,7 @@ export function uniq<T>(arr: T[]): T[] {
  * @param fallback - Value returned when the input is invalid.
  * @returns Parsed finite number or the fallback.
  */
-export function toNumber(
-  value: number | string | undefined,
-  fallback: number,
-): number {
+export function toNumber(value: number | string | undefined, fallback: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value
   }
@@ -269,10 +262,8 @@ export function mergeConfig(
     discovery: {
       ...base.discovery,
       ...patch.discovery,
-      workspaceGlobs:
-        patch.discovery?.workspaceGlobs || base.discovery.workspaceGlobs,
-      packageJsonGlobs:
-        patch.discovery?.packageJsonGlobs || base.discovery.packageJsonGlobs,
+      workspaceGlobs: patch.discovery?.workspaceGlobs || base.discovery.workspaceGlobs,
+      packageJsonGlobs: patch.discovery?.packageJsonGlobs || base.discovery.packageJsonGlobs,
     },
     claims: {
       ...base.claims,
@@ -291,12 +282,10 @@ function normalizeStable(value: unknown): unknown {
   }
 
   if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>).toSorted(
-      ([left], [right]) => left.localeCompare(right),
+    const entries = Object.entries(value as Record<string, unknown>).toSorted(([left], [right]) =>
+      left.localeCompare(right),
     )
-    return Object.fromEntries(
-      entries.map(([key, item]) => [key, normalizeStable(item)]),
-    )
+    return Object.fromEntries(entries.map(([key, item]) => [key, normalizeStable(item)]))
   }
 
   return value

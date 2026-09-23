@@ -8,11 +8,7 @@ import { loadTrustedPublishConfig } from './core/config'
 import type { LoadConfigInput } from './core/config'
 import { discoverPackages } from './core/discovery'
 import { buildTrustConfig } from './core/providers'
-import type {
-  PackageMeta,
-  TrustedPublishConfig,
-  TrustConfig,
-} from './core/types'
+import type { PackageMeta, TrustedPublishConfig, TrustConfig } from './core/types'
 
 /**
  * Input type for resolving runtime config in Node.js.
@@ -98,9 +94,7 @@ export async function resolveTrustedPublishConfig(
  * const entries = await client.list('@scope/pkg')
  * ```
  */
-export function createTrustedPublishClient(
-  config: TrustedPublishConfig,
-): NpmTrustClient {
+export function createTrustedPublishClient(config: TrustedPublishConfig): NpmTrustClient {
   return new NpmTrustClient({
     registry: config.registry,
     requestTimeoutMs: config.requestTimeoutMs,
@@ -142,9 +136,7 @@ export async function discoverTrustedPublishPackages(
  * const payload = buildTrustedPublishPayload(config)
  * ```
  */
-export function buildTrustedPublishPayload(
-  config: NodeApiRuntimeConfig,
-): TrustConfig {
+export function buildTrustedPublishPayload(config: NodeApiRuntimeConfig): TrustConfig {
   return buildTrustConfig(config)
 }
 
@@ -159,9 +151,7 @@ export function buildTrustedPublishPayload(
  * const exitCode = await setupTrustedPublish(config)
  * ```
  */
-export async function setupTrustedPublish(
-  config: NodeApiRuntimeConfig,
-): Promise<number> {
+export async function setupTrustedPublish(config: NodeApiRuntimeConfig): Promise<number> {
   return runSetup(config)
 }
 
@@ -176,9 +166,7 @@ export async function setupTrustedPublish(
  * const exitCode = await listTrustedPublish(config)
  * ```
  */
-export async function listTrustedPublish(
-  config: NodeApiRuntimeConfig,
-): Promise<number> {
+export async function listTrustedPublish(config: NodeApiRuntimeConfig): Promise<number> {
   return runList(config)
 }
 
@@ -193,9 +181,7 @@ export async function listTrustedPublish(
  * const exitCode = await verifyTrustedPublish(config)
  * ```
  */
-export async function verifyTrustedPublish(
-  config: NodeApiRuntimeConfig,
-): Promise<number> {
+export async function verifyTrustedPublish(config: NodeApiRuntimeConfig): Promise<number> {
   return runVerify(config)
 }
 

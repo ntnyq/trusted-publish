@@ -44,10 +44,7 @@ export interface TrustClaimsCircleCI {
 /**
  * Provider-specific claim union.
  */
-export type TrustClaims =
-  | TrustClaimsGitHub
-  | TrustClaimsGitLab
-  | TrustClaimsCircleCI
+export type TrustClaims = TrustClaimsGitHub | TrustClaimsGitLab | TrustClaimsCircleCI
 
 /**
  * Npm trust configuration payload.
@@ -141,10 +138,7 @@ export interface TrustedPublishConfig {
 /**
  * Partial runtime values accepted by base config and named profiles.
  */
-export interface ConfigOverride extends Omit<
-  Partial<TrustedPublishConfig>,
-  'discovery'
-> {
+export interface ConfigOverride extends Omit<Partial<TrustedPublishConfig>, 'discovery'> {
   discovery?: Partial<DiscoveryConfig>
 }
 
@@ -176,12 +170,7 @@ export interface Config extends ConfigOverride {
 /**
  * Per-package command status.
  */
-export type CommandResultStatus =
-  | 'configured'
-  | 'already'
-  | 'failed'
-  | 'skipped'
-  | 'revoked'
+export type CommandResultStatus = 'configured' | 'already' | 'failed' | 'skipped' | 'revoked'
 
 /**
  * Result item emitted by command runners.

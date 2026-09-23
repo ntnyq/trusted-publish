@@ -1,10 +1,6 @@
 import { consola } from 'consola'
 import { RESULT_STATUS_PREFIXES } from '../constants'
-import type {
-  PackageCommandResult,
-  Summary,
-  TrustedPublishConfig,
-} from './types'
+import type { PackageCommandResult, Summary, TrustedPublishConfig } from './types'
 
 /**
  * Creates structured logger helpers based on runtime output options.

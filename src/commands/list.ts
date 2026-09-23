@@ -23,20 +23,15 @@ export async function runList(config: TrustedPublishConfig): Promise<number> {
   reporter.title('npm trusted publisher list')
   reporter.info(`Selected packages: ${packages.length}`)
 
-  const results = await runPackageCommand(
-    config,
-    packages,
-    reporter,
-    async pkg => {
-      const items = await client.list(pkg.name)
-      return {
-        packageName: pkg.name,
-        packageDir: pkg.dir,
-        status: 'configured',
-        message: `found ${items.length} trust config(s)`,
-      } satisfies PackageCommandResult
-    },
-  )
+  const results = await runPackageCommand(config, packages, reporter, async pkg => {
+    const items = await client.list(pkg.name)
+    return {
+      packageName: pkg.name,
+      packageDir: pkg.dir,
+      status: 'configured',
+      message: `found ${items.length} trust config(s)`,
+    } satisfies PackageCommandResult
+  })
 
   const summary = summarize(results)
   reporter.summary(summary, results)

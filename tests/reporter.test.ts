@@ -45,9 +45,7 @@ describe('reporter', () => {
     )
 
     expect(
-      [boxSpy, infoSpy, successSpy, warnSpy, errorSpy].every(
-        spy => spy.mock.calls.length === 0,
-      ),
+      [boxSpy, infoSpy, successSpy, warnSpy, errorSpy].every(spy => spy.mock.calls.length === 0),
     ).toBe(true)
     expect(logSpy).toHaveBeenCalledOnce()
     expect(() => JSON.parse(String(logSpy.mock.calls[0]![0]))).not.toThrow()

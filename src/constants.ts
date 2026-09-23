@@ -73,9 +73,7 @@ export const HTTP_STATUS_SERVER_ERROR_MIN = 500
 /**
  * Terminal prefixes for package command result statuses.
  */
-export const RESULT_STATUS_PREFIXES: Readonly<
-  Record<CommandResultStatus, string>
-> = {
+export const RESULT_STATUS_PREFIXES: Readonly<Record<CommandResultStatus, string>> = {
   configured: '[OK]',
   already: '[SKIP]',
   revoked: '[OK]',

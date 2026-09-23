@@ -1,26 +1,17 @@
 import { NpmTrustClient } from '../core/client'
 import type { createReporter } from '../core/reporter'
-import type {
-  PackageCommandResult,
-  PackageMeta,
-  TrustedPublishConfig,
-} from '../core/types'
+import type { PackageCommandResult, PackageMeta, TrustedPublishConfig } from '../core/types'
 import { runWithConcurrency } from '../utils'
 
 type CommandReporter = ReturnType<typeof createReporter>
-type PackageWorker = (
-  pkg: PackageMeta,
-  index: number,
-) => Promise<PackageCommandResult>
+type PackageWorker = (pkg: PackageMeta, index: number) => Promise<PackageCommandResult>
 
 interface IndexedResult {
   index: number
   result: PackageCommandResult
 }
 
-export function createCommandClient(
-  config: TrustedPublishConfig,
-): NpmTrustClient {
+export function createCommandClient(config: TrustedPublishConfig): NpmTrustClient {
   return new NpmTrustClient({
     registry: config.registry,
     requestTimeoutMs: config.requestTimeoutMs,
@@ -65,9 +56,7 @@ export async function runPackageCommand(
     },
   )
 
-  const resultsByIndex = new Map(
-    processed.map(({ index, result }) => [index, result]),
-  )
+  const resultsByIndex = new Map(processed.map(({ index, result }) => [index, result]))
 
   return packages.map((pkg, index) => {
     const result = resultsByIndex.get(index)

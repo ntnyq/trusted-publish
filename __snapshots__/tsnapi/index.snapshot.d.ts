@@ -245,3 +245,17 @@ export declare const CONFIG_FILES: string[];
 export declare const DEFAULT_CONFIG: TrustedPublishConfig;
 export declare const DEFAULT_IGNORES: string[];
 // #endregion
+
+// #region Referenced (internal)
+interface ClientOptions {
+  registry: string;
+  requestTimeoutMs: number;
+  token: string | undefined;
+  otp: string | undefined;
+  dryRun: boolean;
+  maxRetries: number;
+  retryDelayMs: number;
+  maxRetryDelayMs: number;
+  rateLimitMs: number;
+}
+// #endregion

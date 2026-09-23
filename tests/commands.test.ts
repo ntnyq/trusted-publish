@@ -303,9 +303,7 @@ describe('command flows', () => {
       },
     ]
 
-    const fetchSpy = vi
-      .fn()
-      .mockResolvedValue(Response.json(body, { status: 200 }))
+    const fetchSpy = vi.fn().mockResolvedValue(Response.json(body, { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const code = await runVerify(config)
@@ -331,9 +329,7 @@ describe('command flows', () => {
       },
     ]
 
-    const fetchSpy = vi
-      .fn()
-      .mockResolvedValue(Response.json(body, { status: 200 }))
+    const fetchSpy = vi.fn().mockResolvedValue(Response.json(body, { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const code = await runVerify(config)
@@ -345,9 +341,7 @@ describe('command flows', () => {
   it('list returns success with empty trust list', async () => {
     const ws = createWorkspace(['@scope/a'])
     const config = createConfig(ws.cwd)
-    const fetchSpy = vi
-      .fn()
-      .mockResolvedValue(Response.json([], { status: 200 }))
+    const fetchSpy = vi.fn().mockResolvedValue(Response.json([], { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const code = await runList(config)
@@ -447,18 +441,13 @@ describe('command flows', () => {
   it('node api wrappers invoke command runners', async () => {
     const ws = createWorkspace(['@scope/a'])
     const config = createConfig(ws.cwd)
-    const fetchSpy = vi
-      .fn()
-      .mockResolvedValue(Response.json([], { status: 200 }))
+    const fetchSpy = vi.fn().mockResolvedValue(Response.json([], { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const setupCode = await setupTrustedPublish({ ...config, dryRun: true })
     const listCode = await listTrustedPublish(config)
     const verifyCode = await verifyTrustedPublish(config)
-    const revokeCode = await revokeTrustedPublish(
-      { ...config, dryRun: true },
-      { id: 'trust-id' },
-    )
+    const revokeCode = await revokeTrustedPublish({ ...config, dryRun: true }, { id: 'trust-id' })
 
     expect(setupCode).toBe(0)
     expect(listCode).toBe(0)
@@ -472,9 +461,7 @@ describe('command flows', () => {
     const config = createConfig(ws.cwd)
     const client = createTrustedPublishClient(config)
 
-    const fetchSpy = vi
-      .fn()
-      .mockResolvedValue(Response.json([], { status: 200 }))
+    const fetchSpy = vi.fn().mockResolvedValue(Response.json([], { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const items = await client.list('@scope/a')
@@ -507,10 +494,7 @@ describe('command flows', () => {
     }
     vi.stubGlobal('fetch', fetchSpy)
 
-    await Promise.all([
-      client.setup('@scope/a', payload),
-      client.setup('@scope/b', payload),
-    ])
+    await Promise.all([client.setup('@scope/a', payload), client.setup('@scope/b', payload)])
 
     expect(requestTimes).toHaveLength(2)
     expect(requestTimes[1]! - requestTimes[0]!).toBeGreaterThanOrEqual(15)

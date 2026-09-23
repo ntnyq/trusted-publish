@@ -1,7 +1,4 @@
-import {
-  HTTP_STATUS_SERVER_ERROR_MIN,
-  HTTP_STATUS_TOO_MANY_REQUESTS,
-} from '../constants'
+import { HTTP_STATUS_SERVER_ERROR_MIN, HTTP_STATUS_TOO_MANY_REQUESTS } from '../constants'
 import { sleep } from '../utils'
 import type { TrustConfig } from './types'
 
@@ -122,11 +119,7 @@ export class NpmTrustClient {
     }) as Promise<Response>
   }
 
-  private async request(
-    url: string,
-    init: RequestInit,
-    asJson = false,
-  ): Promise<unknown> {
+  private async request(url: string, init: RequestInit, asJson = false): Promise<unknown> {
     if (this.options.dryRun && init.method !== 'GET') {
       return Response.json({ dryRun: true }, { status: 200 })
     }
@@ -160,10 +153,7 @@ export class NpmTrustClient {
     return res
   }
 
-  private async requestWithRetry(
-    url: string,
-    init: RequestInit,
-  ): Promise<Response> {
+  private async requestWithRetry(url: string, init: RequestInit): Promise<Response> {
     let attempt = 0
     // Retry on 429 and 5xx to improve batch resilience.
     while (true) {
@@ -208,10 +198,7 @@ export class NpmTrustClient {
     }
   }
 
-  private async fetchWithTimeout(
-    url: string,
-    init: RequestInit,
-  ): Promise<Response> {
+  private async fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
     if (this.options.requestTimeoutMs <= 0) {
       return fetch(url, init)
     }
@@ -228,10 +215,9 @@ export class NpmTrustClient {
       })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new Error(
-          `request timed out after ${this.options.requestTimeoutMs}ms: ${url}`,
-          { cause: error },
-        )
+        throw new Error(`request timed out after ${this.options.requestTimeoutMs}ms: ${url}`, {
+          cause: error,
+        })
       }
       throw error
     } finally {
@@ -262,8 +248,7 @@ export class NpmTrustClient {
 
   private isRetryableStatus(statusCode: number): boolean {
     return (
-      statusCode === HTTP_STATUS_TOO_MANY_REQUESTS ||
-      statusCode >= HTTP_STATUS_SERVER_ERROR_MIN
+      statusCode === HTTP_STATUS_TOO_MANY_REQUESTS || statusCode >= HTTP_STATUS_SERVER_ERROR_MIN
     )
   }
 

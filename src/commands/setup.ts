@@ -30,56 +30,49 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
   reporter.info(`Registry: ${config.registry}`)
   reporter.info(`Mode: ${config.dryRun ? 'dry-run' : 'apply'}`)
 
-  const results = await runPackageCommand(
-    config,
-    packages,
-    reporter,
-    async pkg => {
-      if (config.dryRun) {
-        return {
-          packageName: pkg.name,
-          packageDir: pkg.dir,
-          status: 'skipped',
-          message: 'dry-run (no changes applied)',
-        } satisfies PackageCommandResult
-      }
+  const results = await runPackageCommand(config, packages, reporter, async pkg => {
+    if (config.dryRun) {
+      return {
+        packageName: pkg.name,
+        packageDir: pkg.dir,
+        status: 'skipped',
+        message: 'dry-run (no changes applied)',
+      } satisfies PackageCommandResult
+    }
 
-      try {
-        await client.setup(pkg.name, trustConfig)
-        return {
-          packageName: pkg.name,
-          packageDir: pkg.dir,
-          status: 'configured',
-          message: 'trusted publisher configured',
-        } satisfies PackageCommandResult
-      } catch (error) {
-        const { statusCode } = error as { statusCode?: number }
-        if (statusCode === HTTP_STATUS_CONFLICT) {
-          const existing = await client.list(pkg.name)
-          const match = existing.find(item =>
-            matchesTrustConfig(item, trustConfig),
-          )
-          if (match) {
-            return {
-              packageName: pkg.name,
-              packageDir: pkg.dir,
-              status: 'already',
-              message: 'matching trust configuration already exists',
-              ...(match.id ? { trustId: match.id } : {}),
-            } satisfies PackageCommandResult
-          }
-
+    try {
+      await client.setup(pkg.name, trustConfig)
+      return {
+        packageName: pkg.name,
+        packageDir: pkg.dir,
+        status: 'configured',
+        message: 'trusted publisher configured',
+      } satisfies PackageCommandResult
+    } catch (error) {
+      const { statusCode } = error as { statusCode?: number }
+      if (statusCode === HTTP_STATUS_CONFLICT) {
+        const existing = await client.list(pkg.name)
+        const match = existing.find(item => matchesTrustConfig(item, trustConfig))
+        if (match) {
           return {
             packageName: pkg.name,
             packageDir: pkg.dir,
-            status: 'failed',
-            message: 'an existing trust configuration does not match',
+            status: 'already',
+            message: 'matching trust configuration already exists',
+            ...(match.id ? { trustId: match.id } : {}),
           } satisfies PackageCommandResult
         }
-        throw error
+
+        return {
+          packageName: pkg.name,
+          packageDir: pkg.dir,
+          status: 'failed',
+          message: 'an existing trust configuration does not match',
+        } satisfies PackageCommandResult
       }
-    },
-  )
+      throw error
+    }
+  })
 
   const summary = summarize(results)
   reporter.summary(summary, results)

@@ -123,16 +123,14 @@ export async function loadTrustedPublishConfig(
   const { config } = await loadConfig<Config>({
     cwd,
     defaults: {},
-    sources: source
-      ? [{ files: [source], extensions: [] }]
-      : [{ files: CONFIG_FILES }],
+    sources: source ? [{ files: [source], extensions: [] }] : [{ files: CONFIG_FILES }],
     merge: true,
   })
 
   const baseConfig = mergeConfig(DEFAULT_CONFIG, config || {})
   if (
-    cliInput.profile &&
-    (!config?.profiles || !Object.hasOwn(config.profiles, cliInput.profile))
+    cliInput.profile
+    && (!config?.profiles || !Object.hasOwn(config.profiles, cliInput.profile))
   ) {
     throw new Error(`config profile not found: ${cliInput.profile}`)
   }
@@ -199,10 +197,7 @@ export async function loadTrustedPublishConfig(
 
   const patch: ConfigOverride = {
     cwd,
-    requestTimeoutMs: toNumber(
-      cliInput.requestTimeoutMs,
-      profileConfig.requestTimeoutMs,
-    ),
+    requestTimeoutMs: toNumber(cliInput.requestTimeoutMs, profileConfig.requestTimeoutMs),
     provider: cliInput.provider || profileConfig.provider,
     include: uniq([...profileConfig.include, ...toArray(cliInput.include)]),
     exclude: uniq([...profileConfig.exclude, ...toArray(cliInput.exclude)]),
@@ -210,8 +205,7 @@ export async function loadTrustedPublishConfig(
     includePrivate: cliInput.includePrivate ?? profileConfig.includePrivate,
     discovery: {
       ...profileConfig.discovery,
-      fromWorkspaces:
-        cliInput.fromWorkspaces ?? profileConfig.discovery.fromWorkspaces,
+      fromWorkspaces: cliInput.fromWorkspaces ?? profileConfig.discovery.fromWorkspaces,
       fromGlobs: cliInput.fromGlobs ?? profileConfig.discovery.fromGlobs,
       workspaceGlobs: uniq([
         ...profileConfig.discovery.workspaceGlobs,
@@ -228,10 +222,7 @@ export async function loadTrustedPublishConfig(
     failFast: cliInput.failFast ?? profileConfig.failFast,
     maxRetries: toNumber(cliInput.maxRetries, profileConfig.maxRetries),
     retryDelayMs: toNumber(cliInput.retryDelayMs, profileConfig.retryDelayMs),
-    maxRetryDelayMs: toNumber(
-      cliInput.maxRetryDelayMs,
-      profileConfig.maxRetryDelayMs,
-    ),
+    maxRetryDelayMs: toNumber(cliInput.maxRetryDelayMs, profileConfig.maxRetryDelayMs),
     rateLimitMs: toNumber(cliInput.rateLimitMs, profileConfig.rateLimitMs),
     dryRun: cliInput.dryRun ?? profileConfig.dryRun,
     json: cliInput.json ?? profileConfig.json,
@@ -251,8 +242,7 @@ export async function loadTrustedPublishConfig(
     patch.profile = profile
   }
 
-  const token =
-    cliInput.token || process.env['NPM_TOKEN'] || profileConfig.token
+  const token = cliInput.token || process.env['NPM_TOKEN'] || profileConfig.token
   if (token !== undefined) {
     patch.token = token
   }
@@ -308,10 +298,7 @@ export function validateConfig(config: TrustedPublishConfig): void {
     throw new Error('rateLimitMs must be >= 0')
   }
 
-  if (
-    !Number.isFinite(config.requestTimeoutMs) ||
-    config.requestTimeoutMs < 0
-  ) {
+  if (!Number.isFinite(config.requestTimeoutMs) || config.requestTimeoutMs < 0) {
     throw new Error('requestTimeoutMs must be >= 0')
   }
 

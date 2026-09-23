@@ -2,11 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import {
-  buildTrustedPublishPayload,
-  defineConfig,
-  resolveTrustedPublishConfig,
-} from '../src/index'
+import { buildTrustedPublishPayload, defineConfig, resolveTrustedPublishConfig } from '../src/index'
 
 const tempDirs: string[] = []
 
@@ -43,10 +39,7 @@ describe('config resolution', () => {
       allowStagePublish: true,
     })
 
-    expect(config.permissions).toStrictEqual([
-      'createPackage',
-      'createStagedPackage',
-    ])
+    expect(config.permissions).toStrictEqual(['createPackage', 'createStagedPackage'])
   })
 
   it('requires an explicit permission when building a trust payload', async () => {
@@ -105,9 +98,9 @@ describe('config resolution', () => {
   it('rejects missing explicit config files', async () => {
     const cwd = createTempDir()
 
-    await expect(
-      resolveTrustedPublishConfig({ cwd, config: 'missing.json' }),
-    ).rejects.toThrow(`config file not found: ${join(cwd, 'missing.json')}`)
+    await expect(resolveTrustedPublishConfig({ cwd, config: 'missing.json' })).rejects.toThrow(
+      `config file not found: ${join(cwd, 'missing.json')}`,
+    )
   })
 
   it('rejects unknown profiles', async () => {
@@ -129,9 +122,9 @@ describe('config resolution', () => {
       'utf8',
     )
 
-    await expect(
-      resolveTrustedPublishConfig({ cwd, profile: 'missing' }),
-    ).rejects.toThrow('config profile not found: missing')
+    await expect(resolveTrustedPublishConfig({ cwd, profile: 'missing' })).rejects.toThrow(
+      'config profile not found: missing',
+    )
   })
 
   it('accepts partial nested discovery config', () => {

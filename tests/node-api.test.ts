@@ -2,11 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  DEFAULT_CONFIG,
-  resolveTrustedPublishConfig,
-  setupTrustedPublish,
-} from '../src/index'
+import { DEFAULT_CONFIG, resolveTrustedPublishConfig, setupTrustedPublish } from '../src/index'
 
 function createWorkspace(): { cwd: string; cleanup: () => void } {
   const cwd = mkdtempSync(join(tmpdir(), 'trusted-publish-node-api-'))

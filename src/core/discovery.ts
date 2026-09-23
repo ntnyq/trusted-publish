@@ -21,9 +21,7 @@ interface Manifest {
  * const packages = await discoverPackages(config)
  * ```
  */
-export async function discoverPackages(
-  config: TrustedPublishConfig,
-): Promise<PackageMeta[]> {
+export async function discoverPackages(config: TrustedPublishConfig): Promise<PackageMeta[]> {
   const cwd = config.cwd || process.cwd()
   const manifests = new Set<string>()
 
@@ -58,9 +56,7 @@ export async function discoverPackages(
   return filterPackages(packages, config)
 }
 
-async function discoverFromWorkspaces(
-  config: TrustedPublishConfig,
-): Promise<string[]> {
+async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<string[]> {
   const cwd = config.cwd || process.cwd()
   const patterns = new Set<string>()
 
@@ -149,16 +145,11 @@ async function parsePackage(manifestPath: string): Promise<PackageMeta | null> {
   }
 }
 
-function filterPackages(
-  packages: PackageMeta[],
-  config: TrustedPublishConfig,
-): PackageMeta[] {
+function filterPackages(packages: PackageMeta[], config: TrustedPublishConfig): PackageMeta[] {
   return packages
     .filter(pkg => (config.includePrivate ? true : !pkg.private))
     .filter(pkg => (config.package ? pkg.name === config.package : true))
-    .filter(pkg =>
-      config.include.length > 0 ? config.include.includes(pkg.name) : true,
-    )
+    .filter(pkg => (config.include.length > 0 ? config.include.includes(pkg.name) : true))
     .filter(pkg => !config.exclude.includes(pkg.name))
     .sort((a, b) => a.name.localeCompare(b.name))
 }

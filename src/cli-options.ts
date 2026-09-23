@@ -27,10 +27,7 @@ export function configureCliOptions(cli: CAC, version: string): CAC {
     .option('--vcs-origin <value>', 'circleci vcs origin provider/owner/repo')
     .option('--context-ids <ids>', 'circleci context ids (comma separated)')
     .option('--allow-publish', 'allow publish (createPackage)')
-    .option(
-      '--allow-stage-publish',
-      'allow stage publish (createStagedPackage)',
-    )
+    .option('--allow-stage-publish', 'allow stage publish (createStagedPackage)')
     .option('--concurrency <n>', 'parallelism')
     .option('--fail-fast', 'stop processing after first failed package')
     .option('--max-retries <n>', 'max retry times on 429/5xx')
