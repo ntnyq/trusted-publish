@@ -18,6 +18,11 @@ export interface ClaimsInput {
   vcsOrigin?: string;
   contextIds?: string[];
 }
+export interface CommandReport {
+  exitCode: number;
+  summary: Summary;
+  results: PackageCommandResult[];
+}
 export interface Config extends ConfigOverride {
   profiles?: Record<string, ConfigOverride>;
 }
@@ -36,6 +41,8 @@ export interface LoadConfigInput {
   profile?: string;
   requestTimeoutMs?: number | string;
   provider?: ProviderType;
+  command?: CommandName;
+  remotePackage?: string;
   package?: string;
   include?: string | string[];
   exclude?: string | string[];
@@ -83,6 +90,9 @@ export interface PackageCommandResult {
   status: CommandResultStatus;
   message: string;
   trustId?: string;
+  entries?: TrustConfig[];
+  expected?: TrustConfig;
+  recovery?: string;
 }
 export interface PackageMeta {
   dir: string;
@@ -112,6 +122,7 @@ export interface Summary {
   skipped: number;
 }
 export interface TargetSelectOptions {
+  remotePackage?: string;
   package?: string;
   include: string[];
   exclude: string[];
@@ -150,6 +161,7 @@ export interface TrustedPublishConfig {
   registry: string;
   requestTimeoutMs: number;
   provider: ProviderType;
+  remotePackage?: string;
   package?: string;
   include: string[];
   exclude: string[];
@@ -178,6 +190,7 @@ export interface TrustedPublishConfig {
 
 // #region Types
 export type AuthenticationHandler = (_: AuthenticationChallenge) => Promise<string>;
+export type CommandName = 'setup' | 'plan' | 'list' | 'verify' | 'revoke' | 'bootstrap' | 'doctor';
 export type CommandResultStatus = 'configured' | 'already' | 'failed' | 'skipped' | 'revoked';
 export type NodeApiConfigInput = LoadConfigInput;
 export type NodeApiPackageMeta = PackageMeta;
@@ -218,6 +231,7 @@ export declare function buildTrustedPublishPayload(_: NodeApiRuntimeConfig): Tru
 export declare function createReporter(_: TrustedPublishConfig): {
   title(_: string): void;
   info(_: string): void;
+  debug(_: string): void;
   success(_: string): void;
   warn(_: string): void;
   error(_: string): void;
@@ -229,6 +243,7 @@ export declare function defineConfig<T extends Config>(_: T): T;
 export declare function discoverPackages(_: TrustedPublishConfig): Promise<PackageMeta[]>;
 export declare function discoverTrustedPublishPackages(_: NodeApiRuntimeConfig): Promise<PackageMeta[]>;
 export declare function listTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
+export declare function listTrustedPublishDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function loadTrustedPublishConfig(_: LoadConfigInput): Promise<TrustedPublishConfig>;
 export declare function mergeConfig(_: TrustedPublishConfig, _: ConfigOverride): TrustedPublishConfig;
 export declare function normalizeRegistry(_: string): string;
@@ -236,18 +251,25 @@ export declare function parsePermissions(_: PermissionInput): TrustPermission[];
 export declare function resolveCwd(_?: string): string;
 export declare function resolveTrustedPublishConfig(_: NodeApiConfigInput): Promise<TrustedPublishConfig>;
 export declare function revokeTrustedPublish(_: NodeApiRuntimeConfig, _: NodeApiRevokeOptions): Promise<number>;
+export declare function revokeTrustedPublishDetailed(_: TrustedPublishConfig, _: RevokeOptions): Promise<CommandReport>;
 export declare function runList(_: TrustedPublishConfig): Promise<number>;
+export declare function runListDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runRevoke(_: TrustedPublishConfig, _: RevokeOptions): Promise<number>;
+export declare function runRevokeDetailed(_: TrustedPublishConfig, _: RevokeOptions): Promise<CommandReport>;
 export declare function runSetup(_: TrustedPublishConfig): Promise<number>;
+export declare function runSetupDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runVerify(_: TrustedPublishConfig): Promise<number>;
+export declare function runVerifyDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runWithConcurrency<T, R>(_: T[], _: number, _: (_: T, _: number) => Promise<R>, _?: RunWithConcurrencyOptions<R, T>): Promise<R[]>;
 export declare function setupTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
+export declare function setupTrustedPublishDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function sleep(_: number): Promise<void>;
 export declare function summarize(_: PackageCommandResult[]): Summary;
 export declare function toArray(_: string | string[] | undefined): string[];
 export declare function uniq<T>(_: T[]): T[];
-export declare function validateConfig(_: TrustedPublishConfig): void;
+export declare function validateConfig(_: TrustedPublishConfig, _?: CommandName): void;
 export declare function verifyTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
+export declare function verifyTrustedPublishDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 // #endregion
 
 // #region Variables

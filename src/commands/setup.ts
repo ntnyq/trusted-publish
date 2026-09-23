@@ -3,21 +3,21 @@ import { discoverPackages } from '../core/discovery'
 import { buildTrustConfig } from '../core/providers'
 import { createReporter, summarize } from '../core/reporter'
 import { matchesTrustConfig } from '../core/trust-config'
-import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
+import type { CommandReport, PackageCommandResult, TrustedPublishConfig } from '../core/types'
 import { createCommandClient, runPackageCommand } from './shared'
 
 /**
  * Configures trusted publishers for selected packages.
  *
  * @param config - Resolved runtime configuration.
- * @returns Exit code where `0` means success and `1` means partial/full failure.
+ * @returns Structured report where `0` means success and `1` means partial/full failure.
  *
  * @example
  * ```ts
  * const code = await runSetup(config)
  * ```
  */
-export async function runSetup(config: TrustedPublishConfig): Promise<number> {
+export async function runSetupDetailed(config: TrustedPublishConfig): Promise<CommandReport> {
   const reporter = createReporter(config)
   const client = createCommandClient(config)
 
@@ -37,6 +37,7 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
         packageDir: pkg.dir,
         status: 'skipped',
         message: 'dry-run (no changes applied)',
+        expected: trustConfig,
       } satisfies PackageCommandResult
     }
 
@@ -68,6 +69,8 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
           packageDir: pkg.dir,
           status: 'failed',
           message: 'an existing trust configuration does not match',
+          entries: existing,
+          expected: trustConfig,
         } satisfies PackageCommandResult
       }
       throw error
@@ -77,5 +80,15 @@ export async function runSetup(config: TrustedPublishConfig): Promise<number> {
   const summary = summarize(results)
   reporter.summary(summary, results)
 
-  return summary.failed > 0 ? 1 : 0
+  return { exitCode: summary.failed > 0 ? 1 : 0, summary, results }
+}
+
+/**
+ * Runs setup and returns its exit code.
+ * @param config - Runtime config.
+ * @returns Exit code.
+ */
+export async function runSetup(config: TrustedPublishConfig): Promise<number> {
+  const report = await runSetupDetailed(config)
+  return report.exitCode
 }

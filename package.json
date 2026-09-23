@@ -72,6 +72,7 @@
     "open": "^11.0.4",
     "tinyglobby": "^0.2.17",
     "unconfig": "^7.5.0",
+    "validate-npm-package-name": "^8.0.0",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
@@ -79,6 +80,7 @@
     "@types/node": "^26.6.2",
     "@types/npm-profile": "^5.0.5",
     "@types/npmcli__config": "^6.0.4",
+    "@types/validate-npm-package-name": "^4.0.2",
     "bumpp": "^12.3.0",
     "changelogithub": "14.0.0",
     "husky": "^9.1.7",

@@ -43,6 +43,10 @@ export async function runPackageCommand(
     return [result]
   }
 
+  for (const pkg of packages) {
+    reporter.debug(`Selected ${pkg.name}: ${pkg.manifestPath || '(remote package)'}`)
+  }
+
   const processed = await runWithConcurrency(
     packages,
     config.concurrency,

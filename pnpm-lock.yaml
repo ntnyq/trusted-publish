@@ -190,6 +190,9 @@ importers:
       unconfig:
         specifier: ^7.5.0
         version: 7.5.0
+      validate-npm-package-name:
+        specifier: ^8.0.0
+        version: 8.0.0
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
@@ -206,6 +209,9 @@ importers:
       '@types/npmcli__config':
         specifier: ^6.0.4
         version: 6.0.4
+      '@types/validate-npm-package-name':
+        specifier: ^4.0.2
+        version: 4.0.2
       bumpp:
         specifier: ^12.3.0
         version: 12.3.0
@@ -871,6 +877,9 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
+
+  '@types/validate-npm-package-name@4.0.2':
+    resolution: {integrity: sha512-lrpDziQipxCEeK5kWxvljWYhUvOiB2A9izZd9B2AFarYAkqZshb4lPbRs7zKEic6eGtH8V/2qJW+dPp9OtF6bw==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -2901,6 +2910,8 @@ snapshots:
       '@types/node': 26.6.2
 
   '@types/unist@3.0.3': {}
+
+  '@types/validate-npm-package-name@4.0.2': {}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true

@@ -1,3 +1,4 @@
+import { validateConfig } from './config'
 import type {
   TrustClaims,
   TrustClaimsCircleCI,
@@ -19,6 +20,7 @@ import type {
  * ```
  */
 export function buildTrustConfig(config: TrustedPublishConfig): TrustConfig {
+  validateConfig(config, 'setup')
   if (config.permissions.length === 0) {
     throw new Error('at least one permission must be configured')
   }

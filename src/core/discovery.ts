@@ -4,6 +4,7 @@ import { glob } from 'tinyglobby'
 import { parse } from 'yaml'
 import { DEFAULT_IGNORES } from '../constants'
 import { fileExists } from '../utils'
+import { validatePackageName } from './package-name'
 import type { PackageMeta, TrustedPublishConfig } from './types'
 
 interface Manifest {
@@ -24,6 +25,13 @@ interface Manifest {
  */
 export async function discoverPackages(config: TrustedPublishConfig): Promise<PackageMeta[]> {
   const cwd = config.cwd || process.cwd()
+  if (config.remotePackage) {
+    validatePackageName(config.remotePackage)
+    return filterPackages(
+      [{ name: config.remotePackage, dir: cwd, manifestPath: '', private: false }],
+      config,
+    )
+  }
   const manifests = new Set<string>()
 
   const workspaceManifests = config.discovery.fromWorkspaces

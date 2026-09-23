@@ -16,10 +16,12 @@ import { getNpmToken, loadNpmConfig } from './auth'
 import type {
   Config,
   ConfigOverride,
+  CommandName,
   ProviderType,
   TrustedPublishConfig,
   TrustPermission,
 } from './types'
+import { validateConfig } from './validation'
 
 /**
  * Input accepted by config loader before defaults are resolved.
@@ -30,6 +32,8 @@ export interface LoadConfigInput {
   profile?: string
   requestTimeoutMs?: number | string
   provider?: ProviderType
+  command?: CommandName
+  remotePackage?: string
   package?: string
   include?: string | string[]
   exclude?: string | string[]
@@ -248,6 +252,11 @@ export async function loadTrustedPublishConfig(
     registry,
   }
 
+  const remotePackage = cliInput.remotePackage ?? profileConfig.remotePackage
+  if (remotePackage !== undefined) {
+    patch.remotePackage = remotePackage
+  }
+
   const selectedPackage = cliInput.package || profileConfig.package
   if (selectedPackage !== undefined) {
     patch.package = selectedPackage
@@ -278,88 +287,8 @@ export async function loadTrustedPublishConfig(
 
   const merged = mergeConfig(profileConfig, patch)
 
-  validateConfig(merged)
+  validateConfig(merged, cliInput.command)
   return merged
 }
 
-/**
- * Validates provider-specific required fields.
- *
- * @param config - Fully resolved runtime configuration.
- * @returns Nothing. Throws when validation fails.
- *
- * @example
- * ```ts
- * validateConfig(config)
- * ```
- */
-export function validateConfig(config: TrustedPublishConfig): void {
-  if (!['github', 'gitlab', 'circleci'].includes(config.provider)) {
-    throw new Error('provider must be github, gitlab, or circleci')
-  }
-
-  if (!Number.isFinite(config.concurrency) || config.concurrency < 1) {
-    throw new Error('concurrency must be >= 1')
-  }
-
-  if (!Number.isFinite(config.maxRetries) || config.maxRetries < 0) {
-    throw new Error('maxRetries must be >= 0')
-  }
-
-  if (!Number.isFinite(config.retryDelayMs) || config.retryDelayMs < 0) {
-    throw new Error('retryDelayMs must be >= 0')
-  }
-
-  if (!Number.isFinite(config.maxRetryDelayMs) || config.maxRetryDelayMs < 0) {
-    throw new Error('maxRetryDelayMs must be >= 0')
-  }
-
-  if (config.retryDelayMs > config.maxRetryDelayMs) {
-    throw new Error('retryDelayMs must be <= maxRetryDelayMs')
-  }
-
-  if (!Number.isFinite(config.rateLimitMs) || config.rateLimitMs < 0) {
-    throw new Error('rateLimitMs must be >= 0')
-  }
-
-  if (!Number.isFinite(config.requestTimeoutMs) || config.requestTimeoutMs < 0) {
-    throw new Error('requestTimeoutMs must be >= 0')
-  }
-
-  if (!URL.canParse(config.registry)) {
-    throw new Error('registry must be a valid URL')
-  }
-
-  if (config.provider === 'github') {
-    if (!config.claims.workflow && !config.claims.file) {
-      throw new Error('github provider requires workflow/file')
-    }
-    if (!config.claims.repository) {
-      throw new Error('github provider requires repository')
-    }
-  }
-
-  if (config.provider === 'gitlab') {
-    if (!config.claims.project) {
-      throw new Error('gitlab provider requires project')
-    }
-    if (!config.claims.file) {
-      throw new Error('gitlab provider requires file')
-    }
-  }
-
-  if (config.provider === 'circleci') {
-    if (!config.claims.orgId) {
-      throw new Error('circleci provider requires orgId')
-    }
-    if (!config.claims.projectId) {
-      throw new Error('circleci provider requires projectId')
-    }
-    if (!config.claims.pipelineDefinitionId) {
-      throw new Error('circleci provider requires pipelineDefinitionId')
-    }
-    if (!config.claims.vcsOrigin) {
-      throw new Error('circleci provider requires vcsOrigin')
-    }
-  }
-}
+export { validateConfig } from './validation'

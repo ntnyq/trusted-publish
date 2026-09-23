@@ -39,7 +39,7 @@ trusted-publish setup --provider github --repository owner/repo --workflow relea
 ```
 
 ```shell
-trusted-publish list --provider github --repository owner/repo --workflow release.yml
+trusted-publish list --remote-package @scope/pkg --json
 ```
 
 ```shell
@@ -47,7 +47,7 @@ trusted-publish verify --provider gitlab --project group/project --file .gitlab-
 ```
 
 ```shell
-trusted-publish revoke --provider github --repository owner/repo --workflow release.yml --id trust-id
+trusted-publish revoke --remote-package @scope/pkg --id trust-id
 ```
 
 ## 🧰 Commands
@@ -55,7 +55,8 @@ trusted-publish revoke --provider github --repository owner/repo --workflow rele
 | Command | Purpose                                               |
 | ------- | ----------------------------------------------------- |
 | setup   | Create trusted publisher config for selected packages |
-| list    | List trust config counts for selected packages        |
+| list    | List complete entries, including IDs and claims       |
+| plan    | Preview exact payloads without network requests       |
 | verify  | Verify expected trust payload exists                  |
 | revoke  | Revoke trust config by id                             |
 
@@ -66,7 +67,9 @@ use `package.json` workspaces; pnpm uses the YAML `packages` field (including in
 comments and negated patterns). Declared empty workspaces select no packages. Invalid
 workspace metadata fails instead of silently widening the selection.
 
-`--package` filters local discovered packages. `--package-json-globs` replaces the default
+`--package` filters local discovered packages. `--remote-package @scope/pkg` bypasses local
+discovery and operates on the named registry package; it cannot be combined with `--package`.
+Include/exclude name filters still apply. `--package-json-globs` replaces the default
 `**/package.json` pattern and disables workspace discovery unless `--from-workspaces` is
 explicitly supplied. Use `--no-from-workspaces` to scan custom globs even in a workspace.
 Set `discovery.fromWorkspaces: false` with custom `discovery.packageJsonGlobs` in config
@@ -78,35 +81,36 @@ The tables below document every CLI argument, including type, allowed values, wh
 
 ### General Arguments
 
-| Argument                     | Type    | Allowed Values         | Required                         | Default                    | Description                                  |
-| ---------------------------- | ------- | ---------------------- | -------------------------------- | -------------------------- | -------------------------------------------- |
-| --cwd <path>                 | string  | Any directory path     | No                               | Current working directory  | Sets the execution root directory            |
-| --config <path>              | string  | Any config file path   | No                               | Auto-discovery             | Specifies a config file path                 |
-| --profile <name>             | string  | Key in config profiles | No                               | None                       | Uses a named config profile                  |
-| --package <name>             | string  | npm package name       | No                               | None                       | Processes a single package only              |
-| --include <names>            | string  | Comma-separated names  | No                               | Empty                      | Includes only the specified packages         |
-| --exclude <names>            | string  | Comma-separated names  | No                               | Empty                      | Excludes the specified packages              |
-| --ignores <globs>            | string  | Comma-separated globs  | No                               | Empty                      | Adds ignore patterns                         |
-| --workspace-globs <globs>    | string  | Comma-separated globs  | No                               | Empty                      | Adds workspace discovery patterns            |
-| --package-json-globs <globs> | string  | Comma-separated globs  | No                               | \*\*/package.json          | Replaces package.json scan patterns          |
-| --from-workspaces            | boolean | true/false             | No                               | true                       | Enables workspace-based discovery            |
-| --from-globs                 | boolean | true/false             | No                               | true                       | Enables glob fallback without workspaces     |
-| --include-private            | boolean | true/false             | No                               | false                      | Includes private packages                    |
-| --concurrency <n>            | number  | >= 1                   | No                               | 4                          | Number of concurrent package tasks           |
-| --fail-fast                  | boolean | true/false             | No                               | false                      | Stops scheduling new tasks after first error |
-| --max-retries <n>            | number  | >= 0                   | No                               | 2                          | Retry count for 429/5xx responses            |
-| --retry-delay-ms <n>         | number  | >= 0                   | No                               | 1200                       | Base retry delay in milliseconds             |
-| --max-retry-delay-ms <n>     | number  | >= 0                   | No                               | 8000                       | Maximum retry delay in milliseconds          |
-| --rate-limit-ms <n>          | number  | >= 0                   | No                               | 0                          | Minimum spacing for mutation requests        |
-| --request-timeout-ms <n>     | number  | >= 0                   | No                               | 30000                      | Per-request timeout in milliseconds          |
-| --dry-run                    | boolean | true/false             | No                               | false                      | Preview mode, does not apply changes         |
-| --json                       | boolean | true/false             | No                               | false                      | Outputs JSON result format                   |
-| --silent                     | boolean | true/false             | No                               | false                      | Suppresses normal logs                       |
-| --verbose                    | boolean | true/false             | No                               | false                      | Enables verbose logs                         |
-| --yes                        | boolean | true/false             | No                               | false                      | Skips confirmations (reserved)               |
-| --registry <url>             | string  | Valid URL              | No                               | https://registry.npmjs.org | npm registry endpoint                        |
-| --token <token>              | string  | npm token              | Recommended for setup/revoke     | None                       | Auth token                                   |
-| --otp <otp>                  | string  | OTP string             | Recommended when 2FA is required | None                       | npm 2FA OTP                                  |
+| Argument                     | Type    | Allowed Values         | Required                         | Default                    | Description                                                |
+| ---------------------------- | ------- | ---------------------- | -------------------------------- | -------------------------- | ---------------------------------------------------------- |
+| --cwd <path>                 | string  | Any directory path     | No                               | Current working directory  | Sets the execution root directory                          |
+| --config <path>              | string  | Any config file path   | No                               | Auto-discovery             | Specifies a config file path                               |
+| --profile <name>             | string  | Key in config profiles | No                               | None                       | Uses a named config profile                                |
+| --package <name>             | string  | npm package name       | No                               | None                       | Processes a single package only                            |
+| --remote-package <name>      | string  | npm package name       | No                               | None                       | Select a remote package without a local manifest           |
+| --include <names>            | string  | Comma-separated names  | No                               | Empty                      | Includes only the specified packages                       |
+| --exclude <names>            | string  | Comma-separated names  | No                               | Empty                      | Excludes the specified packages                            |
+| --ignores <globs>            | string  | Comma-separated globs  | No                               | Empty                      | Adds ignore patterns                                       |
+| --workspace-globs <globs>    | string  | Comma-separated globs  | No                               | Empty                      | Adds workspace discovery patterns                          |
+| --package-json-globs <globs> | string  | Comma-separated globs  | No                               | \*\*/package.json          | Replaces package.json scan patterns                        |
+| --from-workspaces            | boolean | true/false             | No                               | true                       | Enables workspace-based discovery                          |
+| --from-globs                 | boolean | true/false             | No                               | true                       | Enables glob fallback without workspaces                   |
+| --include-private            | boolean | true/false             | No                               | false                      | Includes private packages                                  |
+| --concurrency <n>            | number  | >= 1                   | No                               | 4                          | Number of concurrent package tasks                         |
+| --fail-fast                  | boolean | true/false             | No                               | false                      | Stops scheduling new tasks after first error               |
+| --max-retries <n>            | number  | >= 0                   | No                               | 2                          | Retry count for 429/5xx responses                          |
+| --retry-delay-ms <n>         | number  | >= 0                   | No                               | 1200                       | Base retry delay in milliseconds                           |
+| --max-retry-delay-ms <n>     | number  | >= 0                   | No                               | 8000                       | Maximum retry delay in milliseconds                        |
+| --rate-limit-ms <n>          | number  | >= 0                   | No                               | 0                          | Minimum spacing for mutation requests                      |
+| --request-timeout-ms <n>     | number  | >= 0                   | No                               | 30000                      | Per-request timeout in milliseconds                        |
+| --dry-run                    | boolean | true/false             | No                               | false                      | Preview mode, does not apply changes                       |
+| --json                       | boolean | true/false             | No                               | false                      | Outputs JSON result format                                 |
+| --silent                     | boolean | true/false             | No                               | false                      | Suppresses normal logs                                     |
+| --verbose                    | boolean | true/false             | No                               | false                      | Enables verbose logs                                       |
+| --yes                        | boolean | true/false             | No                               | false                      | Confirms bootstrap publication; setup/revoke do not prompt |
+| --registry <url>             | string  | Valid URL              | No                               | https://registry.npmjs.org | npm registry endpoint                                      |
+| --token <token>              | string  | npm token              | Recommended for setup/revoke     | None                       | Auth token                                                 |
+| --otp <otp>                  | string  | OTP string             | Recommended when 2FA is required | None                       | npm 2FA OTP                                                |
 
 ### Provider Arguments
 
@@ -131,7 +135,8 @@ The tables below document every CLI argument, including type, allowed values, wh
 | --allow-publish       | boolean | true/false     | No       | false   | Adds createPackage       |
 | --allow-stage-publish | boolean | true/false     | No       | false   | Adds createStagedPackage |
 
-Setup and verify require at least one permission from CLI flags or config.
+Setup, plan and verify require provider claims and at least one permission from CLI flags or config.
+List and revoke need neither claims nor permissions. Revoke by ID requires one selected package.
 
 ### Revoke-only Argument
 
@@ -267,6 +272,32 @@ async function main() {
 
 main()
 ```
+
+### Structured reports and plans
+
+The existing `setupTrustedPublish`, `listTrustedPublish`, `verifyTrustedPublish` and
+`revokeTrustedPublish` functions still return numeric exit codes. Their `*Detailed`
+variants return `{ exitCode, summary, results }`, including entries, trust IDs and
+expected payloads where applicable. CLI `--json` prints `{ summary, results }`.
+
+```ts
+const config = await resolveTrustedPublishConfig({
+  command: 'list',
+  remotePackage: '@scope/pkg',
+  silent: true,
+})
+const report = await listTrustedPublishDetailed(config)
+console.log(report.results[0]?.entries)
+```
+
+Import `listTrustedPublishDetailed` from `trusted-publish`. Use `command: 'revoke'` when
+resolving config to revoke an entry without provider claims. Config resolution defaults
+to `command: 'setup'` for compatibility.
+
+`trusted-publish plan` is an offline setup preview, equivalent to `setup --dry-run`.
+Both show the complete intended claims and permissions for each selected package and
+make no registry requests. Setup conflicts and verify mismatches include `entries` and
+`expected` for comparison. `--verbose` also prints selected manifest paths.
 
 ## 🔁 Retry, Rate Limiting, and Fail-Fast
 

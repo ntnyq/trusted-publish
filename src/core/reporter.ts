@@ -26,6 +26,11 @@ export function createReporter(config: TrustedPublishConfig) {
         consola.info(message)
       }
     },
+    debug(message: string) {
+      if (config.verbose && !config.silent && !config.json) {
+        consola.info(message)
+      }
+    },
     success(message: string) {
       if (!config.silent && !config.json) {
         consola.success(message)
@@ -50,6 +55,12 @@ export function createReporter(config: TrustedPublishConfig) {
         method(
           `${RESULT_STATUS_PREFIXES[result.status]} ${result.packageName} (${result.packageDir}) -> ${result.message}`,
         )
+      }
+      if (!config.silent && result.entries) {
+        consola.log(JSON.stringify({ entries: result.entries }, null, 2))
+      }
+      if (!config.silent && result.expected) {
+        consola.log(JSON.stringify({ expected: result.expected }, null, 2))
       }
     },
     summary(summary: Summary, results: PackageCommandResult[]) {

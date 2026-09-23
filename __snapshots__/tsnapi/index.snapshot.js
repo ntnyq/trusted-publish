@@ -33,6 +33,7 @@ export function defineConfig(_) {}
 export async function discoverPackages(_) {}
 export async function discoverTrustedPublishPackages(_) {}
 export async function listTrustedPublish(_) {}
+export async function listTrustedPublishDetailed(_) {}
 export async function loadTrustedPublishConfig(_) {}
 export function mergeConfig(_, _) {}
 export function normalizeRegistry(_) {}
@@ -40,18 +41,25 @@ export function parsePermissions(_) {}
 export function resolveCwd(_) {}
 export async function resolveTrustedPublishConfig(_) {}
 export async function revokeTrustedPublish(_, _) {}
+export async function revokeTrustedPublishDetailed(_, _) {}
 export async function runList(_) {}
+export async function runListDetailed(_) {}
 export async function runRevoke(_, _) {}
+export async function runRevokeDetailed(_, _) {}
 export async function runSetup(_) {}
+export async function runSetupDetailed(_) {}
 export async function runVerify(_) {}
+export async function runVerifyDetailed(_) {}
 export async function runWithConcurrency(_, _, _, _) {}
 export async function setupTrustedPublish(_) {}
+export async function setupTrustedPublishDetailed(_) {}
 export async function sleep(_) {}
 export function summarize(_) {}
 export function toArray(_) {}
 export function uniq(_) {}
-export function validateConfig(_) {}
+export function validateConfig(_, _) {}
 export async function verifyTrustedPublish(_) {}
+export async function verifyTrustedPublishDetailed(_) {}
 // #endregion
 
 // #region Variables

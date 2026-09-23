@@ -1,4 +1,9 @@
 /**
+ * Commands that select their own configuration validation requirements.
+ */
+export type CommandName = 'setup' | 'plan' | 'list' | 'verify' | 'revoke' | 'bootstrap' | 'doctor'
+
+/**
  * Registry two-factor authentication challenge.
  */
 export interface AuthenticationChallenge {
@@ -83,6 +88,7 @@ export interface PackageMeta {
  * Include/exclude selection controls.
  */
 export interface TargetSelectOptions {
+  remotePackage?: string
   package?: string
   include: string[]
   exclude: string[]
@@ -124,6 +130,7 @@ export interface TrustedPublishConfig {
   registry: string
   requestTimeoutMs: number
   provider: ProviderType
+  remotePackage?: string
   package?: string
   include: string[]
   exclude: string[]
@@ -195,6 +202,18 @@ export interface PackageCommandResult {
   status: CommandResultStatus
   message: string
   trustId?: string
+  entries?: TrustConfig[]
+  expected?: TrustConfig
+  recovery?: string
+}
+
+/**
+ * Structured command result for scripts, including a conventional exit code.
+ */
+export interface CommandReport {
+  exitCode: number
+  summary: Summary
+  results: PackageCommandResult[]
 }
 
 /**

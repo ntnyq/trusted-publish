@@ -1,20 +1,20 @@
 import { discoverPackages } from '../core/discovery'
 import { createReporter, summarize } from '../core/reporter'
-import type { PackageCommandResult, TrustedPublishConfig } from '../core/types'
+import type { CommandReport, PackageCommandResult, TrustedPublishConfig } from '../core/types'
 import { createCommandClient, runPackageCommand } from './shared'
 
 /**
- * Lists trust configuration counts for selected packages.
+ * Lists complete trust configurations for selected packages.
  *
  * @param config - Resolved runtime configuration.
- * @returns Exit code where `0` means success and `1` means one or more failures.
+ * @returns Structured report where `0` means success and `1` means one or more failures.
  *
  * @example
  * ```ts
  * const code = await runList(config)
  * ```
  */
-export async function runList(config: TrustedPublishConfig): Promise<number> {
+export async function runListDetailed(config: TrustedPublishConfig): Promise<CommandReport> {
   const reporter = createReporter(config)
   const client = createCommandClient(config)
 
@@ -30,10 +30,21 @@ export async function runList(config: TrustedPublishConfig): Promise<number> {
       packageDir: pkg.dir,
       status: 'configured',
       message: `found ${items.length} trust config(s)`,
+      entries: items,
     } satisfies PackageCommandResult
   })
 
   const summary = summarize(results)
   reporter.summary(summary, results)
-  return summary.failed > 0 ? 1 : 0
+  return { exitCode: summary.failed > 0 ? 1 : 0, summary, results }
+}
+
+/**
+ * Runs list and returns its exit code.
+ * @param config - Runtime config.
+ * @returns Exit code.
+ */
+export async function runList(config: TrustedPublishConfig): Promise<number> {
+  const report = await runListDetailed(config)
+  return report.exitCode
 }

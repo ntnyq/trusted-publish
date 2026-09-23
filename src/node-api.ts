@@ -206,3 +206,8 @@ export async function revokeTrustedPublish(
 }
 
 export type { RevokeOptions } from './commands/revoke'
+
+export { runSetupDetailed as setupTrustedPublishDetailed } from './commands/setup'
+export { runListDetailed as listTrustedPublishDetailed } from './commands/list'
+export { runVerifyDetailed as verifyTrustedPublishDetailed } from './commands/verify'
+export { runRevokeDetailed as revokeTrustedPublishDetailed } from './commands/revoke'
