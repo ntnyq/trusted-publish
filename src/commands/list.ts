@@ -1,7 +1,7 @@
 import { discoverPackages } from '../core/discovery'
 import { createReporter, summarize } from '../core/reporter'
 import type { CommandReport, PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { createCommandClient, runPackageCommand } from './shared'
+import { createCommandClient, runPackageCommand } from './runner'
 
 /**
  * Lists complete trust configurations for selected packages.

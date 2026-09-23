@@ -1,5 +1,5 @@
-import { validatePackageName } from './package-name'
-import type { CommandName, TrustedPublishConfig } from './types'
+import { validatePackageName } from '../package-name'
+import type { CommandName, TrustedPublishConfig } from '../types'
 
 /**
  * Validates provider-specific required fields.

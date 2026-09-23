@@ -6,7 +6,7 @@ import type { AddressInfo } from 'node:net'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { beforeAll, describe, expect, it } from 'vitest'
-import type { CommandReport } from '../src/core/types'
+import type { CommandReport } from '../../src/core/types'
 
 const exec = promisify(execFile)
 beforeAll(async () => {

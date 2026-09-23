@@ -1,5 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
+import { toArray } from '../src/index'
 import { runWithConcurrency } from '../src/utils'
+
+describe('public utility compatibility', () => {
+  it('splits and trims string input while preserving array entries', () => {
+    const input = [' a ', '', 'b,c', ' ']
+
+    expect(toArray(' a, , b,c ')).toStrictEqual(['a', 'b', 'c'])
+    expect(toArray(input)).toStrictEqual([' a ', 'b,c', ' '])
+    expect(input).toStrictEqual([' a ', '', 'b,c', ' '])
+  })
+})
 
 describe('concurrency helper', () => {
   it('rejects unhandled errors after running workers settle and stops new work', async () => {

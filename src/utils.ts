@@ -1,7 +1,6 @@
 import { access } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { setTimeout as delay } from 'node:timers/promises'
-import type { ConfigOverride, TrustedPublishConfig, TrustPermission } from './core/types'
+import { filterFalsy, isArray, isFunction, isNumber, isObject, isString } from '@ntnyq/utils'
 
 /**
  * Checks whether a file system path is accessible.
@@ -34,13 +33,10 @@ export function toArray(value: string | string[] | undefined): string[] {
   if (!value) {
     return []
   }
-  if (Array.isArray(value)) {
-    return value.filter(Boolean)
+  if (isArray(value)) {
+    return filterFalsy(value)
   }
-  return value
-    .split(',')
-    .map(v => v.trim())
-    .filter(Boolean)
+  return filterFalsy(value.split(',').map(v => v.trim()))
 }
 
 /**
@@ -76,58 +72,6 @@ export function resolveCwd(cwd?: string): string {
 }
 
 /**
- * Input shape for permission inference.
- */
-export interface PermissionInput {
-  permissions?: string[]
-  allowPublish?: boolean
-  allowStagePublish?: boolean
-}
-
-/**
- * Resolves publish permissions from explicit list or boolean toggles.
- *
- * @param input - Permission input controls.
- * @returns Final list of trust permissions.
- *
- * @example
- * ```ts
- * parsePermissions({ allowPublish: true, allowStagePublish: true })
- * // ['createPackage', 'createStagedPackage']
- * ```
- */
-export function parsePermissions(input: PermissionInput): TrustPermission[] {
-  const permissions = (input.permissions || []).filter(
-    (value): value is TrustPermission =>
-      value === 'createPackage' || value === 'createStagedPackage',
-  )
-  if (input.allowPublish) {
-    permissions.push('createPackage')
-  }
-  if (input.allowStagePublish) {
-    permissions.push('createStagedPackage')
-  }
-
-  return uniq(permissions)
-}
-
-/**
- * Removes duplicated values while preserving insertion order.
- *
- * @param arr - Input array.
- * @returns De-duplicated array.
- *
- * @example
- * ```ts
- * uniq(['a', 'a', 'b'])
- * // ['a', 'b']
- * ```
- */
-export function uniq<T>(arr: T[]): T[] {
-  return [...new Set(arr)]
-}
-
-/**
  * Converts a finite number or numeric string to a number.
  *
  * @param value - Number-like input.
@@ -135,10 +79,10 @@ export function uniq<T>(arr: T[]): T[] {
  * @returns Parsed finite number or the fallback.
  */
 export function toNumber(value: number | string | undefined, fallback: number): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  if (isNumber(value) && Number.isFinite(value)) {
     return value
   }
-  if (typeof value === 'string' && value.trim()) {
+  if (isString(value) && value.trim()) {
     const parsed = Number(value)
     if (Number.isFinite(parsed)) {
       return parsed
@@ -155,24 +99,6 @@ export function toNumber(value: number | string | undefined, fallback: number): 
  */
 export function stableStringify(value: unknown): string {
   return JSON.stringify(normalizeStable(value))
-}
-
-/**
- * Sleeps for a given number of milliseconds.
- *
- * @param ms - Delay in milliseconds.
- * @returns A promise resolved after the delay.
- *
- * @example
- * ```ts
- * await sleep(250)
- * ```
- */
-export async function sleep(ms: number): Promise<void> {
-  if (ms <= 0) {
-    return
-  }
-  await delay(ms)
 }
 
 /**
@@ -257,51 +183,13 @@ export async function runWithConcurrency<T, R>(
   return results.filter((result): result is R => result !== undefined)
 }
 
-/**
- * Deep-merges trusted publish config structures with array override semantics.
- *
- * @param base - Base configuration.
- * @param patch - Partial patch values.
- * @returns Merged trusted publish configuration.
- *
- * @example
- * ```ts
- * const merged = mergeConfig(base, { include: ['pkg-a'] })
- * ```
- */
-export function mergeConfig(
-  base: TrustedPublishConfig,
-  patch: ConfigOverride,
-): TrustedPublishConfig {
-  return {
-    ...base,
-    ...patch,
-    discovery: {
-      ...base.discovery,
-      ...patch.discovery,
-      workspaceGlobs: patch.discovery?.workspaceGlobs || base.discovery.workspaceGlobs,
-      packageJsonGlobs: patch.discovery?.packageJsonGlobs || base.discovery.packageJsonGlobs,
-    },
-    claims: {
-      ...base.claims,
-      ...patch.claims,
-    },
-    include: patch.include || base.include,
-    exclude: patch.exclude || base.exclude,
-    ignores: patch.ignores || base.ignores,
-    permissions: patch.permissions || base.permissions,
-  }
-}
-
 function normalizeStable(value: unknown): unknown {
-  if (Array.isArray(value)) {
+  if (isArray(value)) {
     return value.map(item => normalizeStable(item))
   }
 
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>).toSorted(([left], [right]) =>
-      left.localeCompare(right),
-    )
+  if (isObject(value) && !isFunction(value)) {
+    const entries = Object.entries(value).toSorted(([left], [right]) => left.localeCompare(right))
     return Object.fromEntries(entries.map(([key, item]) => [key, normalizeStable(item)]))
   }
 

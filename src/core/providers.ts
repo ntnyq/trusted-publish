@@ -1,4 +1,4 @@
-import { validateConfig } from './config'
+import { validateConfig } from './config/validation'
 import type {
   TrustClaims,
   TrustClaimsCircleCI,

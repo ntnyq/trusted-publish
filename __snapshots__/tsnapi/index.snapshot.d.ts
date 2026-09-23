@@ -297,10 +297,8 @@ export declare function runVerifyDetailed(_: TrustedPublishConfig): Promise<Comm
 export declare function runWithConcurrency<T, R>(_: T[], _: number, _: (_: T, _: number) => Promise<R>, _?: RunWithConcurrencyOptions<R, T>): Promise<R[]>;
 export declare function setupTrustedPublish(_: NodeApiRuntimeConfig, _?: SetupOptions): Promise<number>;
 export declare function setupTrustedPublishDetailed(_: TrustedPublishConfig, _?: SetupOptions): Promise<CommandReport>;
-export declare function sleep(_: number): Promise<void>;
 export declare function summarize(_: PackageCommandResult[]): Summary;
 export declare function toArray(_: string | string[] | undefined): string[];
-export declare function uniq<T>(_: T[]): T[];
 export declare function validateConfig(_: TrustedPublishConfig, _?: CommandName): void;
 export declare function verifyTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
 export declare function verifyTrustedPublishDetailed(_: TrustedPublishConfig): Promise<CommandReport>;

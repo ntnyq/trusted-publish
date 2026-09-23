@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
+import { isArray, isBoolean, isNonEmptyString, isObject, isRecord, isString } from '@ntnyq/utils'
 import { glob } from 'tinyglobby'
 import { parse } from 'yaml'
 import { DEFAULT_IGNORES } from '../constants'
@@ -77,7 +78,7 @@ async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<str
   const hasPnpmWorkspace = await fileExists(pnpmWorkspacePath)
   if (hasPnpmWorkspace) {
     const workspace: unknown = parse(await readFile(pnpmWorkspacePath, 'utf8'))
-    if (workspace && typeof workspace === 'object' && 'packages' in workspace) {
+    if (isObject(workspace) && 'packages' in workspace) {
       hasWorkspaceConfig = true
       for (const pattern of parseWorkspacePatterns(workspace.packages, pnpmWorkspacePath)) {
         patterns.add(pattern)
@@ -92,9 +93,7 @@ async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<str
       hasWorkspaceConfig = true
       const workspaces = pkg.workspaces
       const values =
-        workspaces && typeof workspaces === 'object' && 'packages' in workspaces
-          ? workspaces.packages
-          : workspaces
+        isObject(workspaces) && 'packages' in workspaces ? workspaces.packages : workspaces
       for (const pattern of parseWorkspacePatterns(values, rootPkgPath)) {
         patterns.add(pattern)
       }
@@ -125,7 +124,7 @@ async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<str
 }
 
 function parseWorkspacePatterns(value: unknown, source: string): string[] {
-  if (!Array.isArray(value) || !value.every(item => typeof item === 'string' && item.length > 0)) {
+  if (!isArray(value) || !value.every(item => isNonEmptyString(item))) {
     throw new Error(`workspace packages must be an array of non-empty strings: ${source}`)
   }
   return value
@@ -164,11 +163,9 @@ async function readManifest(manifestPath: string): Promise<Manifest> {
 
 function isManifest(value: unknown): value is Manifest {
   return (
-    value !== null
-    && typeof value === 'object'
-    && !Array.isArray(value)
-    && (!('name' in value) || typeof value.name === 'string')
-    && (!('private' in value) || typeof value.private === 'boolean')
+    isRecord(value)
+    && (!('name' in value) || isString(value['name']))
+    && (!('private' in value) || isBoolean(value['private']))
   )
 }
 

@@ -1,17 +1,15 @@
 /* oxlint-disable vitest/prefer-mock-return-shorthand -- Each request must receive an unread Response body. */
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { NpmTrustClient } from '../src/core/client'
-import { loadTrustedPublishConfig } from '../src/core/config'
+import { NpmTrustClient } from '../../src/core/client'
+import { loadTrustedPublishConfig } from '../../src/core/config/load'
+import { createTempDir } from '../helpers/workspace'
 
-const directories: string[] = []
-afterEach(async () => {
+afterEach(() => {
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()
-  await Promise.all(directories.splice(0).map(dir => rm(dir, { recursive: true, force: true })))
 })
 function client(authenticate?: (challenge: object) => Promise<string>): NpmTrustClient {
   return new NpmTrustClient({
@@ -29,8 +27,8 @@ function client(authenticate?: (challenge: object) => Promise<string>): NpmTrust
 }
 describe('npm authentication', () => {
   it('loads scoped credentials and env interpolation without crossing registry hosts', async () => {
-    const cwd = await mkdtemp(join(tmpdir(), 'trust-auth-'))
-    directories.push(cwd)
+    const cwd = await createTempDir()
+
     await writeFile(join(cwd, 'package.json'), '{}')
     const userconfig = join(cwd, 'user.npmrc')
     await writeFile(userconfig, '//registry.example.test/:_authToken=user-test-token')
@@ -78,6 +76,33 @@ describe('npm authentication', () => {
     })
     expect(new Headers(request.mock.calls[0]?.[1].headers).get('npm-otp')).toBe('123456')
     expect(new Headers(request.mock.calls[1]?.[1].headers).get('npm-otp')).toBe('fresh-otp')
+  })
+
+  it.each([
+    'one-time password required',
+    '{',
+    'null',
+    '[]',
+    '"OTP required"',
+    '{"authUrl":"https://npmjs.com/auth"}',
+    '{"authUrl":123,"doneUrl":"https://registry.example.test/done"}',
+    '{"authUrl":"https://npmjs.com/auth","doneUrl":null}',
+  ])('falls back to an OTP challenge for body %s', async body => {
+    const authenticate = vi.fn(async () => 'fresh-otp')
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(body, {
+          status: 401,
+          headers: { 'www-authenticate': 'OTP' },
+        }),
+      )
+      .mockResolvedValueOnce(Response.json([]))
+    vi.stubGlobal('fetch', request)
+
+    await expect(client(authenticate).list('foo')).resolves.toStrictEqual([])
+    expect(authenticate).toHaveBeenCalledExactlyOnceWith({})
+    expect(request).toHaveBeenCalledTimes(2)
   })
 
   it('does not loop or retry ordinary authorization failures', async () => {

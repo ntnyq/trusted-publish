@@ -346,6 +346,16 @@ trusted-publish setup --profile ci
 
 trusted-publish also provides a Node API for scripts and platform integrations.
 
+For generic helpers, import directly from `@ntnyq/utils`. The `sleep` and `uniq`
+exports have been removed; use `waitFor` and `unique` instead:
+
+```ts
+import { unique, waitFor } from '@ntnyq/utils'
+
+const packages = unique(['pkg-a', 'pkg-a', 'pkg-b'])
+await waitFor(250)
+```
+
 ### Exported Node API Types
 
 | Type                 | Description                                |

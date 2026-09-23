@@ -1,22 +1,12 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
-import { buildTrustedPublishPayload, defineConfig, resolveTrustedPublishConfig } from '../src/index'
-
-const tempDirs: string[] = []
-
-function createTempDir(): string {
-  const cwd = mkdtempSync(join(tmpdir(), 'trusted-publish-config-'))
-  tempDirs.push(cwd)
-  return cwd
-}
-
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
+import { describe, expect, it } from 'vitest'
+import {
+  buildTrustedPublishPayload,
+  defineConfig,
+  resolveTrustedPublishConfig,
+} from '../../src/index'
+import { createTempDir } from '../helpers/workspace'
 
 describe('config resolution', () => {
   it.each([
@@ -59,7 +49,7 @@ describe('config resolution', () => {
   ])(
     'resolves GitHub workflow aliases by source priority: %j',
     async ({ base, profile, input, expected }) => {
-      const cwd = createTempDir()
+      const cwd = await createTempDir()
       writeFileSync(
         join(cwd, 'trusted-publish.config.json'),
         JSON.stringify({
@@ -78,7 +68,7 @@ describe('config resolution', () => {
 
   it('keeps GitLab file overrides separate from GitHub workflow aliases', async () => {
     const config = await resolveTrustedPublishConfig({
-      cwd: createTempDir(),
+      cwd: await createTempDir(),
       provider: 'gitlab',
       project: 'group/project',
       file: 'pipeline.yml',
@@ -136,7 +126,7 @@ describe('config resolution', () => {
   })
 
   it('resolves explicit config files relative to cwd', async () => {
-    const cwd = createTempDir()
+    const cwd = await createTempDir()
     writeFileSync(
       join(cwd, 'custom.json'),
       JSON.stringify({
@@ -168,7 +158,7 @@ describe('config resolution', () => {
   })
 
   it('rejects missing explicit config files', async () => {
-    const cwd = createTempDir()
+    const cwd = await createTempDir()
 
     await expect(resolveTrustedPublishConfig({ cwd, config: 'missing.json' })).rejects.toThrow(
       `config file not found: ${join(cwd, 'missing.json')}`,
@@ -176,7 +166,7 @@ describe('config resolution', () => {
   })
 
   it('rejects unknown profiles', async () => {
-    const cwd = createTempDir()
+    const cwd = await createTempDir()
     writeFileSync(
       join(cwd, 'trusted-publish.config.json'),
       JSON.stringify({

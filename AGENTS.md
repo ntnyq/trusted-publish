@@ -4,11 +4,13 @@
 
 `trusted-publish` provides a CLI and Node API for managing npm trusted publishers.
 
-- `src/cli.ts` and `src/cli-options.ts` handle CLI registration and options; `bin.mjs` is the executable launcher.
+- `src/cli.ts` is the CLI entry; `src/cli/` owns options and interactive authentication; `bin.mjs` is the executable launcher.
 - `src/node-api.ts` implements the programmatic API; `src/index.ts` defines public exports.
 - `src/commands/` implements setup/plan, list, verify, revoke, bootstrap, and doctor operations.
 - `src/core/` contains npm authentication, configuration, package discovery, registry access, provider payloads, workflow inspection, reporting, and shared types.
-- `tests/` contains unit and command-flow tests. `__snapshots__/tsnapi/` tracks generated API snapshots.
+- `src/core/config/` owns configuration loading, merging, permissions, validation, and defaults.
+- `src/commands/runner.ts` owns batch execution; `setup-replace.ts` owns setup replacement recovery.
+- `tests/core/`, `tests/commands/`, and `tests/cli/` group tests by owner; `tests/integration/` covers public API and built CLI flows. `tests/helpers/` provides shared fixtures. `__snapshots__/tsnapi/` tracks generated API snapshots.
 - `dist/` is generated build output; `.github/workflows/` contains CI and release automation.
 
 ## Build, Test, and Development Commands
@@ -22,8 +24,8 @@ Use a Node.js version satisfying `package.json` engines and the pinned pnpm vers
 - `pnpm cli bootstrap --remote-package @scope/pkg --dry-run`: preview a new placeholder without publishing.
 - `pnpm cli doctor --remote-package @scope/pkg --json`: run read-only registry diagnostics.
 - `pnpm cli:dry-run --provider github --repository owner/repo --workflow release.yml --allow-publish`: preview setup.
-- `pnpm test`: run Vitest once; watch mode is disabled by default. Built CLI tests also compile the package and use a local mock registry.
-- `pnpm test tests/commands.test.ts`: run a focused test file.
+- `pnpm test`: run Vitest once; watch mode is disabled by default. Built CLI tests also compile the package and use a local mock registry. Use `pnpm test tests/integration` to run integration tests separately.
+- `pnpm test tests/commands/setup.test.ts`: run a focused test file.
 - `pnpm format`, `pnpm format:check`: apply or verify Oxfmt formatting.
 - `pnpm lint`, `pnpm typecheck`: run Oxlint and TypeScript checks.
 
@@ -33,7 +35,7 @@ Write strict TypeScript using ES modules. Follow two-space indentation, LF endin
 
 ## Testing Guidelines
 
-Name tests `tests/<feature>.test.ts` and use Vitest `describe`/`it` blocks. Mock registry requests and use temporary workspace fixtures with cleanup. Cover changed behavior, including error handling and dry-run guarantees. No coverage threshold is configured. Review API snapshot changes after builds. CI builds and tests on Linux, Windows, and macOS with Node 22, 24, and 26.
+Name tests `tests/<area>/<feature>.test.ts` (general utility tests may stay at the root) and use Vitest `describe`/`it` blocks. Mock registry requests and use temporary workspace fixtures with cleanup. Cover changed behavior, including error handling and dry-run guarantees. No coverage threshold is configured. Review API snapshot changes after builds. CI builds and tests on Linux, Windows, and macOS with Node 22, 24, and 26.
 
 ## Commit & Pull Request Guidelines
 

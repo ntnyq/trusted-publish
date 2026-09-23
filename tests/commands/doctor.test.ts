@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { runDoctorDetailed } from '../src/commands/doctor'
-import { DEFAULT_CONFIG } from '../src/constants'
+import { runDoctorDetailed } from '../../src/commands/doctor'
+import { DEFAULT_CONFIG } from '../../src/core/config/defaults'
 
 afterEach(() => {
   vi.unstubAllGlobals()

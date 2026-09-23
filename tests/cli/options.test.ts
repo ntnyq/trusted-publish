@@ -1,6 +1,6 @@
 import { cac } from 'cac'
 import { describe, expect, it } from 'vitest'
-import { configureCliOptions, normalizeCliBooleans } from '../src/cli-options'
+import { configureCliOptions, normalizeCliBooleans } from '../../src/cli/options'
 
 describe('cli options', () => {
   it('leaves runtime defaults to config resolution', () => {

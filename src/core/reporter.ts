@@ -1,3 +1,4 @@
+import { groupBy } from '@ntnyq/utils'
 import { consola } from 'consola'
 import { RESULT_STATUS_PREFIXES } from '../constants'
 import type { PackageCommandResult, Summary, TrustedPublishConfig } from './types'
@@ -106,12 +107,13 @@ export function createReporter(config: TrustedPublishConfig) {
  * ```
  */
 export function summarize(results: PackageCommandResult[]): Summary {
+  const groups = groupBy(results, 'status')
   return {
     total: results.length,
-    configured: results.filter(v => v.status === 'configured').length,
-    already: results.filter(v => v.status === 'already').length,
-    revoked: results.filter(v => v.status === 'revoked').length,
-    failed: results.filter(v => v.status === 'failed').length,
-    skipped: results.filter(v => v.status === 'skipped').length,
+    configured: groups.configured?.length ?? 0,
+    already: groups.already?.length ?? 0,
+    revoked: groups.revoked?.length ?? 0,
+    failed: groups.failed?.length ?? 0,
+    skipped: groups.skipped?.length ?? 0,
   }
 }

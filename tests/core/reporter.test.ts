@@ -1,13 +1,51 @@
 import { consola } from 'consola'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_CONFIG } from '../src/constants'
-import { createReporter } from '../src/core/reporter'
+import { DEFAULT_CONFIG } from '../../src/core/config/defaults'
+import { createReporter, summarize } from '../../src/core/reporter'
+import type { PackageCommandResult } from '../../src/core/types'
 
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
 describe('reporter', () => {
+  it('reports zero counts for an empty batch', () => {
+    expect(summarize([])).toStrictEqual({
+      total: 0,
+      configured: 0,
+      already: 0,
+      revoked: 0,
+      failed: 0,
+      skipped: 0,
+    })
+  })
+
+  it('counts mixed results and defaults missing statuses to zero', () => {
+    const statuses: PackageCommandResult['status'][] = [
+      'failed',
+      'configured',
+      'already',
+      'failed',
+      'revoked',
+    ]
+    const results = statuses.map((status, index) => ({
+      packageName: `pkg-${index}`,
+      packageDir: `/pkg-${index}`,
+      status,
+      message: status,
+    }))
+
+    expect(summarize(results)).toStrictEqual({
+      total: 5,
+      configured: 1,
+      already: 1,
+      revoked: 1,
+      failed: 2,
+      skipped: 0,
+    })
+    expect(results.map(result => result.status)).toStrictEqual(statuses)
+  })
+
   it('emits only the JSON document in JSON mode', () => {
     const boxSpy = vi.spyOn(consola, 'box').mockImplementation(() => {})
     const infoSpy = vi.spyOn(consola, 'info').mockImplementation(() => {})

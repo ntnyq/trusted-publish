@@ -7,7 +7,7 @@ import { validatePackageName } from '../core/package-name'
 import { publishPlaceholder } from '../core/publish'
 import { createReporter, summarize } from '../core/reporter'
 import type { CommandReport, PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { createCommandClient, runPackageCommand } from './shared'
+import { createCommandClient, runPackageCommand } from './runner'
 
 /**
  * Explicit controls for first publication of a placeholder package.

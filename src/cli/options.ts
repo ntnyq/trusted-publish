@@ -1,3 +1,4 @@
+import { isBoolean } from '@ntnyq/utils'
 import type { CAC } from 'cac'
 
 /**
@@ -11,7 +12,7 @@ export function normalizeCliBooleans(cli: CAC): void {
       continue
     }
     const value: unknown = cli.options[option.name]
-    if (value === undefined || typeof value === 'boolean') {
+    if (value === undefined || isBoolean(value)) {
       continue
     }
     if (value !== 'true' && value !== 'false') {

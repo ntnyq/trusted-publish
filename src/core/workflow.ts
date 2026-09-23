@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { isArray, isRecord, isString } from '@ntnyq/utils'
 import { parse } from 'yaml'
 import { fileExists } from '../utils'
 import type { Diagnostic, ProviderType, TrustedPublishConfig } from './types'
@@ -24,7 +25,7 @@ export async function inferRepository(
   }
   const repository = manifest['repository']
   const value = isRecord(repository) ? repository['url'] : repository
-  if (typeof value !== 'string') {
+  if (!isString(value)) {
     return undefined
   }
   const host = provider === 'github' ? 'github.com' : 'gitlab.com'
@@ -75,13 +76,13 @@ export async function inspectWorkflow(config: TrustedPublishConfig): Promise<Dia
   }
   const diagnostics: Diagnostic[] = []
   for (const [name, job] of Object.entries(workflow['jobs'])) {
-    if (!isRecord(job) || !Array.isArray(job['steps'])) {
+    if (!isRecord(job) || !isArray(job['steps'])) {
       continue
     }
     const publishes = job['steps'].some(
       step =>
         isRecord(step)
-        && typeof step['run'] === 'string'
+        && isString(step['run'])
         && /\b(?:npm|pnpm|yarn(?:\s+npm)?)\s+(?:--[^\s]+\s+)*publish\b/.test(step['run']),
     )
     if (!publishes) {
@@ -107,8 +108,4 @@ export async function inspectWorkflow(config: TrustedPublishConfig): Promise<Dia
     })
   }
   return diagnostics
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }

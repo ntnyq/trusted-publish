@@ -63,10 +63,8 @@ export async function runVerifyDetailed(_) {}
 export async function runWithConcurrency(_, _, _, _) {}
 export async function setupTrustedPublish(_, _) {}
 export async function setupTrustedPublishDetailed(_, _) {}
-export async function sleep(_) {}
 export function summarize(_) {}
 export function toArray(_) {}
-export function uniq(_) {}
 export function validateConfig(_, _) {}
 export async function verifyTrustedPublish(_) {}
 export async function verifyTrustedPublishDetailed(_) {}

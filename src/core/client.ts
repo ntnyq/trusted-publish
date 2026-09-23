@@ -1,3 +1,4 @@
+import { isFunction, isObject, isString, safeParse, waitFor } from '@ntnyq/utils'
 import {
   HTTP_AUTH_STATUSES,
   HTTP_STATUS_NOT_FOUND,
@@ -5,7 +6,6 @@ import {
   HTTP_STATUS_SERVER_ERROR_MIN,
   HTTP_STATUS_TOO_MANY_REQUESTS,
 } from '../constants'
-import { sleep } from '../utils'
 import type { AuthenticationChallenge, AuthenticationHandler, TrustConfig } from './types'
 
 /**
@@ -145,8 +145,8 @@ export class NpmTrustClient {
       return true
     } catch (error) {
       if (
-        error
-        && typeof error === 'object'
+        isObject(error)
+        && !isFunction(error)
         && 'statusCode' in error
         && error.statusCode === HTTP_STATUS_NOT_FOUND
       ) {
@@ -162,12 +162,7 @@ export class NpmTrustClient {
    */
   async whoami(): Promise<string> {
     const body = await this.request(`${this.options.registry}/-/whoami`, { method: 'GET' }, true)
-    if (
-      !body
-      || typeof body !== 'object'
-      || !('username' in body)
-      || typeof body.username !== 'string'
-    ) {
+    if (!isObject(body) || !('username' in body) || !isString(body.username)) {
       throw new Error('invalid whoami response: expected username')
     }
     return body.username
@@ -270,7 +265,9 @@ export class NpmTrustClient {
           this.options.retryDelayMs * 2 ** attempt,
           this.options.maxRetryDelayMs,
         )
-        await sleep(expDelay)
+        if (expDelay > 0) {
+          await waitFor(expDelay)
+        }
         attempt += 1
         continue
       }
@@ -293,7 +290,10 @@ export class NpmTrustClient {
         this.options.retryDelayMs * 2 ** attempt,
         this.options.maxRetryDelayMs,
       )
-      await sleep(retryAfterMs > 0 ? retryAfterMs : expDelay)
+      const delayMs = retryAfterMs > 0 ? retryAfterMs : expDelay
+      if (delayMs > 0) {
+        await waitFor(delayMs)
+      }
       attempt += 1
     }
   }
@@ -343,7 +343,9 @@ export class NpmTrustClient {
     await previous
     try {
       const waitMs = Math.max(0, this.nextMutationAt - Date.now())
-      await sleep(waitMs)
+      if (waitMs > 0) {
+        await waitFor(waitMs)
+      }
       this.nextMutationAt = Date.now() + this.options.rateLimitMs
     } finally {
       queueGate.release?.()
@@ -385,20 +387,20 @@ export class NpmTrustClient {
 }
 
 function parseChallenge(body: string): AuthenticationChallenge {
-  try {
-    const value: unknown = JSON.parse(body)
-    if (
-      value
-      && typeof value === 'object'
-      && 'authUrl' in value
-      && 'doneUrl' in value
-      && typeof value.authUrl === 'string'
-      && typeof value.doneUrl === 'string'
-    ) {
-      return { authUrl: value.authUrl, doneUrl: value.doneUrl }
-    }
-  } catch {
+  const parsed = safeParse(body)
+  if (!parsed.success) {
     // Older registries return a text OTP challenge.
+    return {}
+  }
+  const value = parsed.value
+  if (
+    isObject(value)
+    && 'authUrl' in value
+    && 'doneUrl' in value
+    && isString(value['authUrl'])
+    && isString(value['doneUrl'])
+  ) {
+    return { authUrl: value['authUrl'], doneUrl: value['doneUrl'] }
   }
   return {}
 }

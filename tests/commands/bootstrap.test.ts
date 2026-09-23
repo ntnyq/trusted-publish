@@ -1,11 +1,11 @@
 import { access, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { runBootstrapDetailed } from '../src/commands/bootstrap'
-import { DEFAULT_CONFIG } from '../src/constants'
-import { publishPlaceholder } from '../src/core/publish'
+import { runBootstrapDetailed } from '../../src/commands/bootstrap'
+import { DEFAULT_CONFIG } from '../../src/core/config/defaults'
+import { publishPlaceholder } from '../../src/core/publish'
 
-vi.mock(import('../src/core/publish'), () => ({ publishPlaceholder: vi.fn() }))
+vi.mock(import('../../src/core/publish'), () => ({ publishPlaceholder: vi.fn() }))
 const directories: string[] = []
 afterEach(async () => {
   vi.unstubAllGlobals()

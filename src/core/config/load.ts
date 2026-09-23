@@ -1,18 +1,8 @@
 import { resolve } from 'node:path'
+import { isString, unique } from '@ntnyq/utils'
 import { loadConfig } from 'unconfig'
-import { CONFIG_FILES, DEFAULT_CONFIG } from '../constants'
-import {
-  fileExists,
-  mergeConfig,
-  normalizeRegistry,
-  parsePermissions,
-  resolveCwd,
-  toArray,
-  toNumber,
-  uniq,
-} from '../utils'
-import type { PermissionInput } from '../utils'
-import { getNpmToken, loadNpmConfig } from './auth'
+import { fileExists, normalizeRegistry, resolveCwd, toArray, toNumber } from '../../utils'
+import { getNpmToken, loadNpmConfig } from '../auth'
 import type {
   Config,
   ConfigOverride,
@@ -20,9 +10,14 @@ import type {
   ProviderType,
   TrustedPublishConfig,
   TrustPermission,
-} from './types'
+} from '../types'
+import { inferRepository } from '../workflow'
+import { CONFIG_FILES, DEFAULT_CONFIG } from './defaults'
+import { mergeConfig } from './merge'
+import { parsePermissions } from './permissions'
+import type { PermissionInput } from './permissions'
+// oxlint-disable-next-line import/max-dependencies -- Import shared utilities directly from @ntnyq/utils.
 import { validateConfig } from './validation'
-import { inferRepository } from './workflow'
 
 /**
  * Input accepted by config loader before defaults are resolved.
@@ -152,7 +147,7 @@ export async function loadTrustedPublishConfig(
     || config?.registry
     || npmConfig.get('registry')
   const registry = normalizeRegistry(
-    typeof configuredRegistry === 'string' ? configuredRegistry : profileConfig.registry,
+    isString(configuredRegistry) ? configuredRegistry : profileConfig.registry,
   )
 
   const claims: TrustedPublishConfig['claims'] = { ...profileConfig.claims }
@@ -202,7 +197,7 @@ export async function loadTrustedPublishConfig(
   if (vcsOrigin !== undefined) {
     claims.vcsOrigin = vcsOrigin
   }
-  const contextIds = uniq([
+  const contextIds = unique([
     ...(profileConfig.claims.contextIds || []),
     ...toArray(cliInput.contextIds),
   ])
@@ -224,9 +219,9 @@ export async function loadTrustedPublishConfig(
     cwd,
     requestTimeoutMs: toNumber(cliInput.requestTimeoutMs, profileConfig.requestTimeoutMs),
     provider: cliInput.provider || profileConfig.provider,
-    include: uniq([...profileConfig.include, ...toArray(cliInput.include)]),
-    exclude: uniq([...profileConfig.exclude, ...toArray(cliInput.exclude)]),
-    ignores: uniq([...profileConfig.ignores, ...toArray(cliInput.ignores)]),
+    include: unique([...profileConfig.include, ...toArray(cliInput.include)]),
+    exclude: unique([...profileConfig.exclude, ...toArray(cliInput.exclude)]),
+    ignores: unique([...profileConfig.ignores, ...toArray(cliInput.ignores)]),
     includePrivate: cliInput.includePrivate ?? profileConfig.includePrivate,
     discovery: {
       ...profileConfig.discovery,
@@ -236,14 +231,14 @@ export async function loadTrustedPublishConfig(
           ? profileConfig.discovery.fromWorkspaces
           : false),
       fromGlobs: cliInput.fromGlobs ?? profileConfig.discovery.fromGlobs,
-      workspaceGlobs: uniq([
+      workspaceGlobs: unique([
         ...profileConfig.discovery.workspaceGlobs,
         ...toArray(cliInput.workspaceGlobs),
       ]),
       packageJsonGlobs:
         cliInput.packageJsonGlobs === undefined
           ? profileConfig.discovery.packageJsonGlobs
-          : uniq(toArray(cliInput.packageJsonGlobs)),
+          : unique(toArray(cliInput.packageJsonGlobs)),
     },
     claims,
     permissions: parsePermissions(permissionInput),
@@ -327,5 +322,3 @@ export async function loadTrustedPublishConfig(
   validateConfig(merged, cliInput.command)
   return merged
 }
-
-export { validateConfig } from './validation'

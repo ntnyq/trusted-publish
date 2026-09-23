@@ -1,3 +1,4 @@
+import { isFunction, isObject } from '@ntnyq/utils'
 import { HTTP_UNAUTHORIZED, HTTP_FORBIDDEN } from '../constants'
 import { discoverPackages } from '../core/discovery'
 import { buildTrustConfig } from '../core/providers'
@@ -5,7 +6,7 @@ import { createReporter, summarize } from '../core/reporter'
 import { matchesTrustConfig } from '../core/trust-config'
 import type { CommandReport, Diagnostic, TrustedPublishConfig, TrustConfig } from '../core/types'
 import { inspectWorkflow } from '../core/workflow'
-import { createCommandClient, runPackageCommand } from './shared'
+import { createCommandClient, runPackageCommand } from './runner'
 
 /**
  * Diagnoses registry visibility, credentials, trust state and optional expected configuration.
@@ -96,7 +97,7 @@ export async function runDoctor(config: TrustedPublishConfig): Promise<number> {
 }
 
 function errorMessage(error: unknown): string {
-  if (error && typeof error === 'object' && 'statusCode' in error) {
+  if (isObject(error) && !isFunction(error) && 'statusCode' in error) {
     if (error.statusCode === HTTP_UNAUTHORIZED) {
       return `authentication required: ${String(error)}`
     }

@@ -1,9 +1,9 @@
 import { cac } from 'cac'
 import { name, version } from '../package.json'
-import { configureCliOptions, normalizeCliBooleans } from './cli-options'
+import { authenticateInteractively } from './cli/auth'
+import { configureCliOptions, normalizeCliBooleans } from './cli/options'
 import { runBootstrap, runDoctor, runList, runRevoke, runSetup, runVerify } from './commands'
-import { authenticateInteractively } from './core/auth'
-import { loadTrustedPublishConfig } from './core/config'
+import { loadTrustedPublishConfig } from './core/config/load'
 import type { CommandName, TrustedPublishConfig } from './core/types'
 
 const cli = configureCliOptions(cac(name), version)

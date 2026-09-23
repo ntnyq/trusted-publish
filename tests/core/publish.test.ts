@@ -1,22 +1,21 @@
 import { ChildProcess } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import spawn from 'cross-spawn'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_CONFIG } from '../src/constants'
-import { publishPlaceholder } from '../src/core/publish'
+import { DEFAULT_CONFIG } from '../../src/core/config/defaults'
+import { publishPlaceholder } from '../../src/core/publish'
+import { createTempDir } from '../helpers/workspace'
 
 vi.mock(import('cross-spawn'))
-const directories: string[] = []
-afterEach(async () => {
+
+afterEach(() => {
   vi.resetAllMocks()
-  await Promise.all(directories.splice(0).map(dir => rm(dir, { recursive: true, force: true })))
 })
 describe('npm publication', () => {
   it('passes credentials only through the child environment and an npmrc placeholder', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'trust-publish-'))
-    directories.push(directory)
+    const directory = await createTempDir()
+
     const child = new ChildProcess()
     vi.mocked(spawn).mockImplementation(() => {
       queueMicrotask(() => child.emit('close', 0))

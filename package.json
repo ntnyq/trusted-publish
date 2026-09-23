@@ -23,7 +23,10 @@
     "name": "ntnyq",
     "email": "ntnyq13@gmail.com"
   },
-  "repository": "ntnyq/trusted-publish",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ntnyq/trusted-publish.git"
+  },
   "bin": "./bin.mjs",
   "files": [
     "bin.mjs",
@@ -66,6 +69,7 @@
   },
   "dependencies": {
     "@npmcli/config": "^11.1.0",
+    "@ntnyq/utils": "^0.23.0",
     "cac": "^7.0.0",
     "consola": "^3.4.2",
     "cross-spawn": "^7.0.6",

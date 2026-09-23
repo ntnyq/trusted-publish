@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { isArray, isObject, isString } from '@ntnyq/utils'
 import { validatePackageName } from './package-name'
 
 /**
@@ -8,22 +9,17 @@ import { validatePackageName } from './package-name'
  */
 export async function readRetryTargets(path: string): Promise<Set<string>> {
   const report: unknown = JSON.parse(await readFile(path, 'utf8'))
-  if (
-    !report
-    || typeof report !== 'object'
-    || !('results' in report)
-    || !Array.isArray(report.results)
-  ) {
+  if (!isObject(report) || !('results' in report) || !isArray(report.results)) {
     throw new Error('retry report must contain a results array')
   }
   const names = new Set<string>()
   for (const result of report.results) {
     if (
-      !result
-      || typeof result !== 'object'
+      !isObject(result)
       || !('status' in result)
+      || !isString(result.status)
       || !('packageName' in result)
-      || typeof result.packageName !== 'string'
+      || !isString(result.packageName)
       || !['configured', 'already', 'failed', 'skipped', 'revoked'].includes(result.status)
     ) {
       throw new Error('invalid package result in retry report')

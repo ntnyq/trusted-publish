@@ -3,7 +3,7 @@ import { buildTrustConfig } from '../core/providers'
 import { createReporter, summarize } from '../core/reporter'
 import { matchesTrustConfig } from '../core/trust-config'
 import type { CommandReport, PackageCommandResult, TrustedPublishConfig } from '../core/types'
-import { createCommandClient, runPackageCommand } from './shared'
+import { createCommandClient, runPackageCommand } from './runner'
 
 /**
  * Revoke command options.

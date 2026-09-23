@@ -1,25 +1,16 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   listTrustedPublishDetailed,
   resolveTrustedPublishConfig,
   setupTrustedPublishDetailed,
   revokeTrustedPublishDetailed,
-} from '../src/index'
+} from '../../src/index'
+import { createTempDir } from '../helpers/workspace'
 
-const directories: string[] = []
-afterEach(async () => {
+afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
-  await Promise.all(directories.splice(0).map(dir => rm(dir, { recursive: true, force: true })))
 })
-async function directory(): Promise<string> {
-  const cwd = await mkdtemp(join(tmpdir(), 'trust-management-'))
-  directories.push(cwd)
-  return cwd
-}
 const entry = {
   id: 'per-package-id',
   type: 'github',
@@ -29,7 +20,7 @@ const entry = {
 
 describe('management output', () => {
   it('lists remote entries and revokes their ID without provider claims or local manifests', async () => {
-    const cwd = await directory()
+    const cwd = await createTempDir()
     const config = await resolveTrustedPublishConfig({
       cwd,
       command: 'list',
@@ -52,7 +43,7 @@ describe('management output', () => {
 
   it('renders the exact dry-run payload and does not send any requests', async () => {
     const config = await resolveTrustedPublishConfig({
-      cwd: await directory(),
+      cwd: await createTempDir(),
       remotePackage: 'example',
       command: 'plan',
       repository: 'owner/repo',
@@ -78,7 +69,7 @@ describe('management output', () => {
   })
 
   it('rejects conflicting selectors and package specs', async () => {
-    const cwd = await directory()
+    const cwd = await createTempDir()
     await expect(
       resolveTrustedPublishConfig({ cwd, command: 'list', remotePackage: 'foo', package: 'bar' }),
     ).rejects.toThrow('cannot be combined')

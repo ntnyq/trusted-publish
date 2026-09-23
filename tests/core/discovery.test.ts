@@ -1,20 +1,18 @@
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { runSetupDetailed } from '../src/commands/setup'
-import { DEFAULT_CONFIG } from '../src/constants'
-import { loadTrustedPublishConfig } from '../src/core/config'
-import { discoverPackages } from '../src/core/discovery'
+import { runSetupDetailed } from '../../src/commands/setup'
+import { DEFAULT_CONFIG } from '../../src/core/config/defaults'
+import { loadTrustedPublishConfig } from '../../src/core/config/load'
+import { discoverPackages } from '../../src/core/discovery'
+import { createTempDir } from '../helpers/workspace'
 
-const directories: string[] = []
-afterEach(async () => {
+afterEach(() => {
   vi.unstubAllGlobals()
-  await Promise.all(directories.splice(0).map(dir => rm(dir, { recursive: true, force: true })))
 })
 async function workspace(yaml?: string): Promise<string> {
-  const cwd = await mkdtemp(join(tmpdir(), 'trust-discovery-'))
-  directories.push(cwd)
+  const cwd = await createTempDir()
+
   for (const name of ['a', 'excluded']) {
     await mkdir(join(cwd, 'packages', name), { recursive: true })
     await writeFile(join(cwd, 'packages', name, 'package.json'), JSON.stringify({ name }))

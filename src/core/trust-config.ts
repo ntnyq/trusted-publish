@@ -1,3 +1,4 @@
+import { isArray, isString, unique } from '@ntnyq/utils'
 import { stableStringify } from '../utils'
 import type { TrustConfig } from './types'
 
@@ -13,7 +14,7 @@ export function matchesTrustConfig(actual: TrustConfig, expected: TrustConfig): 
 function normalizeTrustConfig(config: TrustConfig): object {
   const claims: Record<string, unknown> = { ...config.claims }
   const contextIds = claims[CIRCLECI_CONTEXT_IDS_KEY]
-  if (Array.isArray(contextIds)) {
+  if (isArray(contextIds)) {
     claims[CIRCLECI_CONTEXT_IDS_KEY] = sortUnique(contextIds)
   }
 
@@ -25,7 +26,5 @@ function normalizeTrustConfig(config: TrustConfig): object {
 }
 
 function sortUnique(values: unknown[]): string[] {
-  return [
-    ...new Set(values.filter((value): value is string => typeof value === 'string')),
-  ].toSorted()
+  return unique(values.filter(value => isString(value))).toSorted()
 }
