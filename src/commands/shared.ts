@@ -13,6 +13,7 @@ interface IndexedResult {
 
 export function createCommandClient(config: TrustedPublishConfig): NpmTrustClient {
   return new NpmTrustClient({
+    authenticate: config.authenticate,
     registry: config.registry,
     requestTimeoutMs: config.requestTimeoutMs,
     token: config.token,

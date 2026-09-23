@@ -12,6 +12,7 @@ import {
   uniq,
 } from '../utils'
 import type { PermissionInput } from '../utils'
+import { getNpmToken, loadNpmConfig } from './auth'
 import type {
   Config,
   ConfigOverride,
@@ -65,6 +66,7 @@ export interface LoadConfigInput {
   registry?: string
   token?: string
   otp?: string
+  authenticate?: TrustedPublishConfig['authenticate']
 }
 
 /**
@@ -138,6 +140,16 @@ export async function loadTrustedPublishConfig(
     cliInput.profile && config?.profiles?.[cliInput.profile]
       ? mergeConfig(baseConfig, config.profiles[cliInput.profile] || {})
       : baseConfig
+
+  const npmConfig = await loadNpmConfig(cwd)
+  const configuredRegistry =
+    cliInput.registry
+    || (cliInput.profile ? config?.profiles?.[cliInput.profile]?.registry : undefined)
+    || config?.registry
+    || npmConfig.get('registry')
+  const registry = normalizeRegistry(
+    typeof configuredRegistry === 'string' ? configuredRegistry : profileConfig.registry,
+  )
 
   const claims: TrustedPublishConfig['claims'] = { ...profileConfig.claims }
   const repository = cliInput.repository ?? profileConfig.claims.repository
@@ -233,7 +245,7 @@ export async function loadTrustedPublishConfig(
     silent: cliInput.silent ?? profileConfig.silent,
     verbose: cliInput.verbose ?? profileConfig.verbose,
     yes: cliInput.yes ?? profileConfig.yes,
-    registry: normalizeRegistry(cliInput.registry || profileConfig.registry),
+    registry,
   }
 
   const selectedPackage = cliInput.package || profileConfig.package
@@ -246,7 +258,11 @@ export async function loadTrustedPublishConfig(
     patch.profile = profile
   }
 
-  const token = cliInput.token || process.env['NPM_TOKEN'] || profileConfig.token
+  const token =
+    cliInput.token
+    || process.env['NPM_TOKEN']
+    || profileConfig.token
+    || (URL.canParse(registry) ? getNpmToken(npmConfig, registry) : undefined)
   if (token !== undefined) {
     patch.token = token
   }
@@ -254,6 +270,10 @@ export async function loadTrustedPublishConfig(
   const otp = cliInput.otp || process.env['NPM_OTP'] || profileConfig.otp
   if (otp !== undefined) {
     patch.otp = otp
+  }
+
+  if (cliInput.authenticate) {
+    patch.authenticate = cliInput.authenticate
   }
 
   const merged = mergeConfig(profileConfig, patch)

@@ -6,11 +6,14 @@ export class NpmTrustClient {
   options
   mutationQueue
   nextMutationAt
+  otp
+  authentication
   constructor(_) {}
   async list(_) {}
   async setup(_, _) {}
   async revoke(_, _) {}
   async request(_, _, _) {}
+  async authenticate(_, _) {}
   async requestWithRetry(_, _) {}
   async fetchWithTimeout(_, _) {}
   async waitForRateLimit(_) {}

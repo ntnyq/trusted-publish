@@ -80,3 +80,22 @@ export const RESULT_STATUS_PREFIXES: Readonly<Record<CommandResultStatus, string
   skipped: '[SKIP]',
   failed: '[FAIL]',
 }
+
+/**
+ * Status codes that may carry an npm authentication challenge.
+ */
+const HTTP_UNAUTHORIZED = 401
+const HTTP_FORBIDDEN = 403
+export const HTTP_AUTH_STATUSES: readonly number[] = [HTTP_UNAUTHORIZED, HTTP_FORBIDDEN]
+
+/**
+ * HTTP status codes that cannot have a response body.
+ */
+const HTTP_NO_CONTENT = 204
+const HTTP_RESET_CONTENT = 205
+const HTTP_NOT_MODIFIED = 304
+export const HTTP_EMPTY_BODY_STATUSES: readonly number[] = [
+  HTTP_NO_CONTENT,
+  HTTP_RESET_CONTENT,
+  HTTP_NOT_MODIFIED,
+]

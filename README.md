@@ -30,6 +30,8 @@ yarn add trusted-publish
 pnpm add trusted-publish
 ```
 
+Requires Node.js `^22.22.2 || ^24.15.0 || >=26.0.0`.
+
 ## 🚀 Quick Start
 
 ```shell
@@ -273,14 +275,26 @@ main()
 - Uses exponential backoff capped by max-retry-delay-ms
 - rate-limit-ms controls spacing between mutation requests
 - fail-fast stops scheduling new tasks after first failure
-- request-timeout-ms limits maximum wait time per request
+- request-timeout-ms covers response headers and the complete body, including error responses
 
 ## 🔐 Auth Notes
 
-- setup/revoke usually require npm credentials with trust endpoint permissions
-- list/verify may also require a token depending on registry policy
-- You can pass credentials via --token and --otp
-- You can also use environment variables: NPM_TOKEN and NPM_OTP
+Credentials saved by `npm login` are loaded using npm's configuration loader (project,
+user and global `.npmrc`, including environment interpolation). Registry-scoped tokens
+are selected for the configured registry. Token precedence is `--token`, `NPM_TOKEN`,
+trusted-publish config, then npm config. Registry precedence is CLI, profile, config,
+then npm config. OTP can be supplied through `--otp` or `NPM_OTP` on **all** operations,
+including list and verify.
+
+In an interactive terminal, an OTP challenge prompts for a code or opens npm's browser
+2FA page and retries once. Concurrent requests share the in-flight authentication.
+`--json`, `--silent` and noninteractive usage require an OTP or a Node API
+`authenticate(challenge)` callback; they never open an interactive prompt. Authentication
+responses are held in memory, not written to disk. Do not put credentials in tracked config.
+
+The account needs 2FA and write access, and the package must already exist. Tokens with
+bypass 2FA and legacy username/password credentials are not supported by npm trust.
+See [npm trust prerequisites](https://docs.npmjs.com/cli/v11/commands/npm-trust/#prerequisites).
 
 ## 📄 License
 

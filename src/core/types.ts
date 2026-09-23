@@ -1,4 +1,17 @@
 /**
+ * Registry two-factor authentication challenge.
+ */
+export interface AuthenticationChallenge {
+  authUrl?: string
+  doneUrl?: string
+}
+
+/**
+ * Supplies an OTP or completes a browser challenge; the token is held only in memory.
+ */
+export type AuthenticationHandler = (challenge: AuthenticationChallenge) => Promise<string>
+
+/**
  * Supported trusted publisher providers.
  */
 export type ProviderType = 'github' | 'gitlab' | 'circleci'
@@ -130,6 +143,7 @@ export interface TrustedPublishConfig {
   silent: boolean
   verbose: boolean
   yes: boolean
+  authenticate?: AuthenticationHandler
   token?: string
   otp?: string
   profile?: string

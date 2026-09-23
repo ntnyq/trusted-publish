@@ -96,6 +96,7 @@ export async function resolveTrustedPublishConfig(
  */
 export function createTrustedPublishClient(config: TrustedPublishConfig): NpmTrustClient {
   return new NpmTrustClient({
+    authenticate: config.authenticate,
     registry: config.registry,
     requestTimeoutMs: config.requestTimeoutMs,
     token: config.token,

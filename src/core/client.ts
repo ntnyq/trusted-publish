@@ -1,11 +1,17 @@
-import { HTTP_STATUS_SERVER_ERROR_MIN, HTTP_STATUS_TOO_MANY_REQUESTS } from '../constants'
+import {
+  HTTP_AUTH_STATUSES,
+  HTTP_EMPTY_BODY_STATUSES,
+  HTTP_STATUS_SERVER_ERROR_MIN,
+  HTTP_STATUS_TOO_MANY_REQUESTS,
+} from '../constants'
 import { sleep } from '../utils'
-import type { TrustConfig } from './types'
+import type { AuthenticationChallenge, AuthenticationHandler, TrustConfig } from './types'
 
 /**
  * Runtime options for npm trust API client.
  */
 interface ClientOptions {
+  authenticate?: AuthenticationHandler | undefined
   registry: string
   requestTimeoutMs: number
   token: string | undefined
@@ -31,6 +37,8 @@ export class NpmTrustClient {
   private readonly options: ClientOptions
   private mutationQueue: Promise<void> = Promise.resolve()
   private nextMutationAt = 0
+  private otp: string | undefined
+  private authentication: Promise<string> | undefined
 
   /**
    * Creates a new npm trust client.
@@ -54,6 +62,7 @@ export class NpmTrustClient {
    */
   constructor(options: ClientOptions) {
     this.options = options
+    this.otp = options.otp
   }
 
   /**
@@ -76,7 +85,10 @@ export class NpmTrustClient {
       true,
     )) as unknown
 
-    return Array.isArray(body) ? body : []
+    if (!Array.isArray(body)) {
+      throw new TypeError('invalid trust response: expected an array')
+    }
+    return body
   }
 
   /**
@@ -128,14 +140,34 @@ export class NpmTrustClient {
     if (this.options.token) {
       headers.set('authorization', `Bearer ${this.options.token}`)
     }
-    if (this.options.otp && init.method !== 'GET') {
-      headers.set('npm-otp', this.options.otp)
+    if (this.otp) {
+      headers.set('npm-otp', this.otp)
     }
 
-    const res = await this.requestWithRetry(url, {
+    let res = await this.requestWithRetry(url, {
       ...init,
       headers,
     })
+
+    if (!res.ok) {
+      const body = await res.clone().text()
+      if (
+        HTTP_AUTH_STATUSES.includes(res.status)
+        && /EOTP|one[- ]time pass|"authUrl"/i.test(body)
+      ) {
+        if (!this.options.authenticate) {
+          throw Object.assign(
+            new Error(
+              '2FA required: provide NPM_OTP, use an interactive terminal, or supply an authenticate callback',
+            ),
+            { statusCode: res.status, code: 'EOTP' },
+          )
+        }
+        await this.authenticate(parseChallenge(body), headers.get('npm-otp') || undefined)
+        headers.set('npm-otp', this.otp || '')
+        res = await this.requestWithRetry(url, { ...init, headers })
+      }
+    }
 
     if (!res.ok) {
       const text = await res.text()
@@ -151,6 +183,28 @@ export class NpmTrustClient {
     }
 
     return res
+  }
+
+  private async authenticate(
+    challenge: AuthenticationChallenge,
+    attemptedOtp: string | undefined,
+  ): Promise<void> {
+    if (this.otp !== attemptedOtp) {
+      return
+    }
+    const handler = this.options.authenticate
+    if (!handler) {
+      return
+    }
+    this.authentication ??= handler(challenge)
+    try {
+      this.otp = await this.authentication
+      if (!this.otp) {
+        throw new Error('2FA authentication returned an empty OTP')
+      }
+    } finally {
+      this.authentication = undefined
+    }
   }
 
   private async requestWithRetry(url: string, init: RequestInit): Promise<Response> {
@@ -199,22 +253,26 @@ export class NpmTrustClient {
   }
 
   private async fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
-    if (this.options.requestTimeoutMs <= 0) {
-      return fetch(url, init)
-    }
-
     const controller = new AbortController()
-    const timeoutHandle = setTimeout(() => {
-      controller.abort()
-    }, this.options.requestTimeoutMs)
-
+    const timeoutHandle =
+      this.options.requestTimeoutMs > 0
+        ? setTimeout(() => controller.abort(), this.options.requestTimeoutMs)
+        : undefined
     try {
-      return await fetch(url, {
+      const response = await fetch(url, {
         ...init,
+        headers: new Headers(init.headers),
         signal: controller.signal,
       })
+      // Read the entire body before releasing the deadline, including error/retry responses.
+      const body = await response.arrayBuffer()
+      return new Response(HTTP_EMPTY_BODY_STATUSES.includes(response.status) ? null : body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      })
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
+      if (controller.signal.aborted) {
         throw new Error(`request timed out after ${this.options.requestTimeoutMs}ms: ${url}`, {
           cause: error,
         })
@@ -278,4 +336,23 @@ export class NpmTrustClient {
   private packageTrustIdUrl(packageName: string, id: string): string {
     return `${this.packageUrl(packageName)}/${encodeURIComponent(id)}`
   }
+}
+
+function parseChallenge(body: string): AuthenticationChallenge {
+  try {
+    const value: unknown = JSON.parse(body)
+    if (
+      value
+      && typeof value === 'object'
+      && 'authUrl' in value
+      && 'doneUrl' in value
+      && typeof value.authUrl === 'string'
+      && typeof value.doneUrl === 'string'
+    ) {
+      return { authUrl: value.authUrl, doneUrl: value.doneUrl }
+    }
+  } catch {
+    // Older registries return a text OTP challenge.
+  }
+  return {}
 }

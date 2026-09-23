@@ -1,3 +1,4 @@
+/* oxlint-disable vitest/prefer-mock-return-shorthand -- Each request must receive an unread Response body. */
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -341,7 +342,7 @@ describe('command flows', () => {
   it('list returns success with empty trust list', async () => {
     const ws = createWorkspace(['@scope/a'])
     const config = createConfig(ws.cwd)
-    const fetchSpy = vi.fn().mockResolvedValue(Response.json([], { status: 200 }))
+    const fetchSpy = vi.fn().mockImplementation(() => Response.json([], { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const code = await runList(config)
@@ -441,7 +442,7 @@ describe('command flows', () => {
   it('node api wrappers invoke command runners', async () => {
     const ws = createWorkspace(['@scope/a'])
     const config = createConfig(ws.cwd)
-    const fetchSpy = vi.fn().mockResolvedValue(Response.json([], { status: 200 }))
+    const fetchSpy = vi.fn().mockImplementation(() => Response.json([], { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const setupCode = await setupTrustedPublish({ ...config, dryRun: true })
@@ -461,7 +462,7 @@ describe('command flows', () => {
     const config = createConfig(ws.cwd)
     const client = createTrustedPublishClient(config)
 
-    const fetchSpy = vi.fn().mockResolvedValue(Response.json([], { status: 200 }))
+    const fetchSpy = vi.fn().mockImplementation(() => Response.json([], { status: 200 }))
     vi.stubGlobal('fetch', fetchSpy)
 
     const items = await client.list('@scope/a')

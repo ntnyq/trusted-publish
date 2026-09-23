@@ -65,8 +65,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@npmcli/config": "^11.1.0",
     "cac": "^7.0.0",
     "consola": "^3.4.2",
+    "npm-profile": "^13.0.1",
+    "open": "^11.0.4",
     "tinyglobby": "^0.2.17",
     "unconfig": "^7.5.0",
     "yaml": "^2.9.1"
@@ -74,6 +77,8 @@
   "devDependencies": {
     "@ntnyq/tsconfig": "^3.1.0",
     "@types/node": "^26.6.2",
+    "@types/npm-profile": "^5.0.5",
+    "@types/npmcli__config": "^6.0.4",
     "bumpp": "^12.3.0",
     "changelogithub": "14.0.0",
     "husky": "^9.1.7",
@@ -89,6 +94,9 @@
   "nano-staged": {
     "*.{js,ts,mjs,tsx}": "oxlint --fix --no-error-on-unmatched-pattern",
     "*": "oxfmt --no-error-on-unmatched-pattern"
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "packageManager": "pnpm@12.5.1"
 }
