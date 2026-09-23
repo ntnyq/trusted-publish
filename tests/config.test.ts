@@ -19,6 +19,78 @@ afterEach(() => {
 })
 
 describe('config resolution', () => {
+  it.each([
+    {
+      base: { workflow: 'base.yml' },
+      profile: {},
+      input: { file: 'cli.yml' },
+      expected: 'cli.yml',
+    },
+    {
+      base: { file: 'base.yml' },
+      profile: {},
+      input: { workflow: 'cli.yml' },
+      expected: 'cli.yml',
+    },
+    {
+      base: { workflow: 'base.yml' },
+      profile: { file: 'profile.yml' },
+      input: {},
+      expected: 'profile.yml',
+    },
+    {
+      base: { file: 'base.yml' },
+      profile: { workflow: 'profile.yml' },
+      input: {},
+      expected: 'profile.yml',
+    },
+    {
+      base: { workflow: 'base.yml' },
+      profile: { workflow: 'profile.yml' },
+      input: { file: 'cli.yml' },
+      expected: 'cli.yml',
+    },
+    {
+      base: { file: 'base.yml' },
+      profile: {},
+      input: { workflow: 'workflow.yml', file: 'file.yml' },
+      expected: 'workflow.yml',
+    },
+  ])(
+    'resolves GitHub workflow aliases by source priority: %j',
+    async ({ base, profile, input, expected }) => {
+      const cwd = createTempDir()
+      writeFileSync(
+        join(cwd, 'trusted-publish.config.json'),
+        JSON.stringify({
+          claims: { repository: 'owner/repo', ...base },
+          permissions: ['createPackage'],
+          profiles: { release: { claims: profile } },
+        }),
+      )
+      const config = await resolveTrustedPublishConfig({ cwd, profile: 'release', ...input })
+      expect(buildTrustedPublishPayload(config).claims).toStrictEqual({
+        repository: 'owner/repo',
+        workflow_ref: { file: expected },
+      })
+    },
+  )
+
+  it('keeps GitLab file overrides separate from GitHub workflow aliases', async () => {
+    const config = await resolveTrustedPublishConfig({
+      cwd: createTempDir(),
+      provider: 'gitlab',
+      project: 'group/project',
+      file: 'pipeline.yml',
+      workflow: 'unrelated.yml',
+      allowPublish: true,
+    })
+    expect(buildTrustedPublishPayload(config).claims).toStrictEqual({
+      project_path: 'group/project',
+      ci_config_ref_uri: { file: 'pipeline.yml' },
+    })
+  })
+
   it('resolves stage-only permissions without granting direct publish', async () => {
     const config = await resolveTrustedPublishConfig({
       provider: 'github',

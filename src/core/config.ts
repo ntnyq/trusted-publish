@@ -142,10 +142,8 @@ export async function loadTrustedPublishConfig(
   ) {
     throw new Error(`config profile not found: ${cliInput.profile}`)
   }
-  const profileConfig =
-    cliInput.profile && config?.profiles?.[cliInput.profile]
-      ? mergeConfig(baseConfig, config.profiles[cliInput.profile] || {})
-      : baseConfig
+  const selectedProfile = cliInput.profile ? config?.profiles?.[cliInput.profile] : undefined
+  const profileConfig = selectedProfile ? mergeConfig(baseConfig, selectedProfile) : baseConfig
 
   const npmConfig = await loadNpmConfig(cwd)
   const configuredRegistry =
@@ -162,7 +160,16 @@ export async function loadTrustedPublishConfig(
   if (repository !== undefined) {
     claims.repository = repository
   }
-  const workflow = cliInput.workflow ?? profileConfig.claims.workflow
+  // GitHub's aliases share precedence across CLI, profile and base configuration.
+  const workflow =
+    (cliInput.provider || profileConfig.provider) === 'github'
+      ? (cliInput.workflow
+        ?? cliInput.file
+        ?? selectedProfile?.claims?.workflow
+        ?? selectedProfile?.claims?.file
+        ?? profileConfig.claims.workflow
+        ?? profileConfig.claims.file)
+      : (cliInput.workflow ?? profileConfig.claims.workflow)
   if (workflow !== undefined) {
     claims.workflow = workflow
   }

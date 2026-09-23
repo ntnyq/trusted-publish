@@ -11,6 +11,7 @@ import type { PackageMeta, TrustedPublishConfig } from './types'
 interface Manifest {
   name?: string
   private?: boolean
+  workspaces?: unknown
 }
 
 /**
@@ -73,7 +74,8 @@ async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<str
   const patterns = new Set(config.discovery.workspaceGlobs)
   let hasWorkspaceConfig = patterns.size > 0
   const pnpmWorkspacePath = resolve(cwd, 'pnpm-workspace.yaml')
-  if (await fileExists(pnpmWorkspacePath)) {
+  const hasPnpmWorkspace = await fileExists(pnpmWorkspacePath)
+  if (hasPnpmWorkspace) {
     const workspace: unknown = parse(await readFile(pnpmWorkspacePath, 'utf8'))
     if (workspace && typeof workspace === 'object' && 'packages' in workspace) {
       hasWorkspaceConfig = true
@@ -85,7 +87,7 @@ async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<str
 
   const rootPkgPath = resolve(cwd, 'package.json')
   if (await fileExists(rootPkgPath)) {
-    const pkg = JSON.parse(await readFile(rootPkgPath, 'utf8')) as { workspaces?: unknown }
+    const pkg = await readManifest(rootPkgPath)
     if (pkg.workspaces !== undefined) {
       hasWorkspaceConfig = true
       const workspaces = pkg.workspaces
@@ -102,18 +104,24 @@ async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<str
   if (!hasWorkspaceConfig) {
     return undefined
   }
-  if (patterns.size === 0) {
-    return []
+  const options = {
+    cwd,
+    ignore: [...DEFAULT_IGNORES, ...config.ignores],
+    onlyFiles: true,
+    absolute: true,
   }
-  return glob(
-    [...patterns].map(pattern => `${pattern.replace(/\/$/, '')}/package.json`),
-    {
-      cwd,
-      ignore: [...DEFAULT_IGNORES, ...config.ignores],
-      onlyFiles: true,
-      absolute: true,
-    },
-  )
+  const manifests =
+    patterns.size > 0
+      ? await glob(
+          [...patterns].map(pattern => `${pattern.replace(/\/$/, '')}/package.json`),
+          options,
+        )
+      : []
+  if (hasPnpmWorkspace) {
+    // The pnpm root is included independently of workspace inclusion/exclusion patterns.
+    manifests.push(...(await glob('package.json', options)))
+  }
+  return manifests
 }
 
 function parseWorkspacePatterns(value: unknown, source: string): string[] {
@@ -124,21 +132,44 @@ function parseWorkspacePatterns(value: unknown, source: string): string[] {
 }
 
 async function parsePackage(manifestPath: string): Promise<PackageMeta | null> {
-  try {
-    const raw = await readFile(manifestPath, 'utf8')
-    const pkg = JSON.parse(raw) as Manifest
-    if (!pkg.name) {
-      return null
-    }
-    return {
-      name: pkg.name,
-      private: Boolean(pkg.private),
-      manifestPath,
-      dir: dirname(manifestPath),
-    }
-  } catch {
+  const pkg = await readManifest(manifestPath)
+  if (!pkg.name) {
     return null
   }
+  return {
+    name: pkg.name,
+    private: Boolean(pkg.private),
+    manifestPath,
+    dir: dirname(manifestPath),
+  }
+}
+
+async function readManifest(manifestPath: string): Promise<Manifest> {
+  try {
+    const raw = await readFile(manifestPath, 'utf8')
+    const pkg: unknown = JSON.parse(raw)
+    if (!isManifest(pkg)) {
+      throw new TypeError(
+        'expected a manifest object with an optional string name and boolean private flag',
+      )
+    }
+    return pkg
+  } catch (error) {
+    throw new Error(
+      `failed to read package manifest ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    )
+  }
+}
+
+function isManifest(value: unknown): value is Manifest {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && !Array.isArray(value)
+    && (!('name' in value) || typeof value.name === 'string')
+    && (!('private' in value) || typeof value.private === 'boolean')
+  )
 }
 
 async function filterPackages(

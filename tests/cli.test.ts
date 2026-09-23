@@ -21,6 +21,21 @@ async function cli(...args: string[]): Promise<Omit<CommandReport, 'exitCode'>> 
 }
 
 describe('built CLI', () => {
+  it('does not grant direct publication when its flag is explicitly false', async () => {
+    const report = await cli(
+      'plan',
+      '--remote-package',
+      'example',
+      '--repository',
+      'owner/repo',
+      '--workflow',
+      'release.yml',
+      '--allow-publish=false',
+      '--allow-stage-publish',
+    )
+    expect(report.results[0]?.expected?.permissions).toStrictEqual(['createStagedPackage'])
+  })
+
   it('loads external npm modules under native Node ESM and prints a complete plan', async () => {
     const report = await cli(
       'plan',

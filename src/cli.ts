@@ -1,6 +1,6 @@
 import { cac } from 'cac'
 import { name, version } from '../package.json'
-import { configureCliOptions } from './cli-options'
+import { configureCliOptions, normalizeCliBooleans } from './cli-options'
 import { runBootstrap, runDoctor, runList, runRevoke, runSetup, runVerify } from './commands'
 import { authenticateInteractively } from './core/auth'
 import { loadTrustedPublishConfig } from './core/config'
@@ -70,7 +70,9 @@ cli
   })
 
 cli.help()
-cli.parse()
+cli.parse(process.argv, { run: false })
+normalizeCliBooleans(cli)
+cli.runMatchedCommand()
 
 async function loadCliConfig(command: CommandName): Promise<TrustedPublishConfig> {
   const config = await loadTrustedPublishConfig({ ...cli.options, command })

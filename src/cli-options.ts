@@ -1,5 +1,26 @@
 import type { CAC } from 'cac'
 
+/**
+ * Normalizes declared boolean options before command execution, including CAC's string values.
+ * @param cli - Parsed CLI instance.
+ */
+export function normalizeCliBooleans(cli: CAC): void {
+  const options = [...cli.globalCommand.options, ...(cli.matchedCommand?.options || [])]
+  for (const option of options) {
+    if (!option.isBoolean) {
+      continue
+    }
+    const value: unknown = cli.options[option.name]
+    if (value === undefined || typeof value === 'boolean') {
+      continue
+    }
+    if (value !== 'true' && value !== 'false') {
+      throw new Error(`${option.rawName} must be true or false`)
+    }
+    cli.options[option.name] = value === 'true'
+  }
+}
+
 export function configureCliOptions(cli: CAC, version: string): CAC {
   return cli
     .version(version)

@@ -34,17 +34,32 @@ Requires Node.js `^22.22.2 || ^24.15.0 || >=26.0.0`.
 
 ## 🚀 Quick Start
 
+Preview and publish a placeholder for a new npm package before configuring trusted publishing:
+
+```shell
+trusted-publish bootstrap --remote-package @scope/new-package --dry-run
+trusted-publish bootstrap --remote-package @scope/new-package --yes
+```
+
+Configure GitHub Actions trusted publishing for the selected local packages:
+
 ```shell
 trusted-publish setup --provider github --repository owner/repo --workflow release.yml --allow-publish
 ```
+
+List an npm package's trusted publisher configurations as JSON:
 
 ```shell
 trusted-publish list --remote-package @scope/pkg --json
 ```
 
+Verify that the selected local packages trust the expected GitLab CI configuration:
+
 ```shell
 trusted-publish verify --provider gitlab --project group/project --file .gitlab-ci.yml --allow-publish
 ```
+
+Revoke a specific trusted publisher configuration using the ID returned by `list`:
 
 ```shell
 trusted-publish revoke --remote-package @scope/pkg --id trust-id
@@ -166,8 +181,11 @@ code or `doctorTrustedPublishDetailed` for results including typed `diagnostics`
 
 Workspace declarations take precedence over recursive glob discovery. npm, Yarn and Bun
 use `package.json` workspaces; pnpm uses the YAML `packages` field (including inline arrays,
-comments and negated patterns). Declared empty workspaces select no packages. Invalid
-workspace metadata fails instead of silently widening the selection.
+comments and negated patterns). pnpm workspace selection also includes the root package,
+subject to the same private/include/exclude/ignore filters. An empty pnpm `packages` array
+selects only the root; empty npm/Yarn/Bun workspaces select no packages. Invalid workspace
+metadata or an unreadable/malformed selected package manifest stops the command before
+registry requests, with an error identifying the manifest. Nameless manifests are skipped.
 
 `--package` filters local discovered packages. `--remote-package @scope/pkg` bypasses local
 discovery and operates on the named registry package; it cannot be combined with `--package`.
@@ -240,6 +258,14 @@ The tables below document every CLI argument, including type, allowed values, wh
 
 Setup, plan and verify require provider claims and at least one permission from CLI flags or config.
 List and revoke by ID need neither claims nor permissions. Revoke with `--matching` requires both. Revoke by ID requires one selected package.
+
+Boolean flags accept `--flag`, `--no-flag`, `--flag=true` and `--flag=false`.
+For example, `--allow-publish=false --allow-stage-publish` adds only staged publishing
+permission; permissions already supplied by config remain in effect.
+
+For GitHub, `--workflow` and `--file` are aliases. Either CLI option overrides either
+alias in the selected profile, which overrides the base configuration. If both aliases
+are supplied at the same level, `workflow` takes precedence.
 
 ### Setup and Revoke Arguments
 
@@ -406,6 +432,11 @@ to `command: 'setup'` for compatibility.
 Both show the complete intended claims and permissions for each selected package and
 make no registry requests. Setup conflicts and verify mismatches include `entries` and
 `expected` for comparison. `--verbose` also prints selected manifest paths.
+
+The exported `runWithConcurrency` helper rejects on an unhandled worker error, stops
+scheduling new items, and waits for already running workers to settle. Supply `onError`
+to explicitly handle failures and collect successful results; with `failFast: true`,
+the first handled failure also stops new work.
 
 ## 🔁 Retry, Rate Limiting, and Fail-Fast
 

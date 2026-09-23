@@ -190,8 +190,9 @@ export interface RunWithConcurrencyOptions<R, T> {
  * @param items - Work items.
  * @param concurrency - Maximum parallel workers. Values below `1` are clamped to `1`.
  * @param worker - Async worker callback.
- * @param options - Optional fail-fast/stop/error behavior.
+ * @param options - Optional fail-fast/stop/error behavior. An onError callback handles failures explicitly.
  * @returns Results for completed workers in input order (omits empty slots).
+ * @throws {unknown} Unhandled worker errors, after already running workers settle.
  *
  * @example
  * ```ts
@@ -226,7 +227,16 @@ export async function runWithConcurrency<T, R>(
           return
         }
       } catch (error) {
-        options?.onError?.(error, items[index]!, index)
+        if (!options?.onError) {
+          shouldStop = true
+          throw error
+        }
+        try {
+          options.onError(error, items[index]!, index)
+        } catch (handlerError) {
+          shouldStop = true
+          throw handlerError
+        }
         if (options?.failFast) {
           shouldStop = true
           return
@@ -235,7 +245,14 @@ export async function runWithConcurrency<T, R>(
     }
   }
 
-  await Promise.all(Array.from({ length: safeConcurrency }, () => runWorker()))
+  const workers = await Promise.allSettled(
+    Array.from({ length: safeConcurrency }, () => runWorker()),
+  )
+  for (const outcome of workers) {
+    if (outcome.status === 'rejected') {
+      throw outcome.reason
+    }
+  }
 
   return results.filter((result): result is R => result !== undefined)
 }
