@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { runSetupDetailed } from '../../src/commands/setup'
 import { DEFAULT_CONFIG } from '../../src/core/config/defaults'
@@ -30,7 +30,10 @@ describe('package selection', () => {
       const cwd = await workspace('packages: ["packages/a"]')
       const manifestPath = join(cwd, 'packages/a/package.json')
       await writeFile(manifestPath, content)
-      await expect(discoverPackages({ ...DEFAULT_CONFIG, cwd })).rejects.toThrow(manifestPath)
+      // Glob results use forward slashes even on Windows.
+      await expect(discoverPackages({ ...DEFAULT_CONFIG, cwd })).rejects.toThrow(
+        manifestPath.split(sep).join('/'),
+      )
     },
   )
 
@@ -58,7 +61,7 @@ describe('package selection', () => {
         claims: { repository: 'owner/repo', workflow: 'release.yml' },
         permissions: ['createPackage'],
       }),
-    ).rejects.toThrow(`failed to read package manifest ${manifestPath}`)
+    ).rejects.toThrow(`failed to read package manifest ${manifestPath.split(sep).join('/')}`)
     expect(request).not.toHaveBeenCalled()
   })
 
@@ -137,6 +140,6 @@ describe('package selection', () => {
     expect(config.discovery.packageJsonGlobs).toStrictEqual(['packages/a/package.json'])
     const packages = await discoverPackages(config)
     expect(packages.map(pkg => pkg.name)).toStrictEqual(['a'])
-    expect(packages[0]?.dir).toBe(join(cwd, 'packages', 'a'))
+    expect(packages[0]?.dir).toBe(join(cwd, 'packages', 'a').split(sep).join('/'))
   })
 })
