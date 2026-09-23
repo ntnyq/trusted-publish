@@ -353,7 +353,6 @@ describe('command flows', () => {
   })
 
   it('list accounts for skipped packages after fail-fast', async () => {
-    const { consola } = await import('consola')
     const ws = createWorkspace(['@scope/a', '@scope/b', '@scope/c'])
     const config = createConfig(ws.cwd)
     config.concurrency = 1
@@ -361,7 +360,7 @@ describe('command flows', () => {
     config.json = true
     config.maxRetries = 0
     config.silent = false
-    const logSpy = vi.spyOn(consola, 'log').mockImplementation(() => {})
+    const logSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
     const fetchSpy = vi.fn().mockResolvedValue(
       new Response('boom', {
         status: 500,

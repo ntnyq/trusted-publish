@@ -93,6 +93,22 @@ describe('npm authentication', () => {
     expect(authenticate).toHaveBeenCalledOnce()
   })
 
+  it('recognizes the npm WWW-Authenticate OTP challenge header', async () => {
+    const authenticate = vi.fn(async () => 'header-otp')
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response('authentication needed', {
+          status: 401,
+          headers: { 'www-authenticate': 'Bearer, OTP' },
+        }),
+      )
+      .mockResolvedValueOnce(Response.json([]))
+    vi.stubGlobal('fetch', request)
+    await expect(client(authenticate).list('example')).resolves.toStrictEqual([])
+    expect(authenticate).toHaveBeenCalledOnce()
+  })
+
   it('shares one authentication flow across concurrent requests', async () => {
     const authenticate = vi.fn(async () => {
       await delay(10)

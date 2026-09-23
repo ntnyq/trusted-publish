@@ -195,7 +195,11 @@ export class NpmTrustClient {
       const body = await res.clone().text()
       if (
         HTTP_AUTH_STATUSES.includes(res.status)
-        && /EOTP|one[- ]time pass|"authUrl"/i.test(body)
+        && (/EOTP|one[- ]time pass|"authUrl"/i.test(body)
+          || res.headers
+            .get('www-authenticate')
+            ?.split(/,\s*/)
+            .some(value => value.toLowerCase() === 'otp'))
       ) {
         if (!this.options.authenticate) {
           throw Object.assign(

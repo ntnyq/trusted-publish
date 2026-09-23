@@ -9,16 +9,22 @@ import type { TrustedPublishConfig } from './types'
  * @param directory - Generated package directory.
  * @param access - Package visibility.
  * @param config - Registry/auth and output options.
+ * @param packageName - Package name used to pin any scoped registry override.
  * @returns Nothing after npm exits successfully.
  */
 export async function publishPlaceholder(
   directory: string,
   access: 'public' | 'restricted',
   config: TrustedPublishConfig,
+  packageName: string,
 ): Promise<void> {
   const registry = new URL(config.registry)
   const scope = `//${registry.host}${registry.pathname.replace(/\/?$/, '/')}`
   const env = { ...process.env }
+  if (packageName.startsWith('@')) {
+    const scopeName = packageName.slice(0, packageName.indexOf('/'))
+    env[`npm_config_${scopeName}:registry`] = config.registry
+  }
   if (config.token) {
     // The file contains an environment reference, never the credential itself.
     await writeFile(

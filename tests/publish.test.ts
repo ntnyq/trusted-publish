@@ -22,12 +22,17 @@ describe('npm publication', () => {
       queueMicrotask(() => child.emit('close', 0))
       return child as ReturnType<typeof spawn>
     })
-    await publishPlaceholder(directory, 'restricted', {
-      ...DEFAULT_CONFIG,
-      token: 'test-secret',
-      otp: 'test-otp',
-      json: true,
-    })
+    await publishPlaceholder(
+      directory,
+      'restricted',
+      {
+        ...DEFAULT_CONFIG,
+        token: 'test-secret',
+        otp: 'test-otp',
+        json: true,
+      },
+      '@scope/new-package',
+    )
     const [command, args, options] = vi.mocked(spawn).mock.calls[0]!
     expect(command).toBe('npm')
     expect(args).toStrictEqual([
@@ -46,7 +51,11 @@ describe('npm publication', () => {
     expect(options).toMatchObject({
       cwd: directory,
       stdio: 'ignore',
-      env: { TRUSTED_PUBLISH_BOOTSTRAP_TOKEN: 'test-secret', npm_config_otp: 'test-otp' },
+      env: {
+        TRUSTED_PUBLISH_BOOTSTRAP_TOKEN: 'test-secret',
+        npm_config_otp: 'test-otp',
+        'npm_config_@scope:registry': DEFAULT_CONFIG.registry,
+      },
     })
     const npmrc = await readFile(join(directory, '.npmrc'), 'utf8')
     expect(npmrc).not.toContain('test-secret')

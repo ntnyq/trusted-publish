@@ -1,7 +1,7 @@
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import NpmConfig from '@npmcli/config'
-import { definitions, flatten, shorthands } from '@npmcli/config/lib/definitions/index.js'
+import npmDefinitions from '@npmcli/config/lib/definitions/index.js'
 import { consola } from 'consola'
 import { webAuthOpener } from 'npm-profile'
 import open from 'open'
@@ -14,6 +14,7 @@ import type { AuthenticationHandler } from './types'
  */
 export async function loadNpmConfig(cwd: string): Promise<NpmConfig> {
   const npmPackagePath = fileURLToPath(import.meta.resolve('@npmcli/config/package.json'))
+  const { definitions, flatten, shorthands } = npmDefinitions
   const config = new NpmConfig({
     definitions,
     flatten,

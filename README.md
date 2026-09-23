@@ -74,8 +74,9 @@ trusted-publish setup --remote-package @scope/new-package --repository owner/rep
 ```
 
 Bootstrap generates an isolated minimal package, checks existence before applying, and
-publishes through the installed npm CLI with lifecycle scripts disabled. It skips existing
-packages, refuses private local packages, and never modifies your source manifests.
+publishes through the installed npm CLI with lifecycle scripts disabled. Scoped packages
+use the selected registry even when npm has a different scope-specific registry setting.
+It skips existing packages, refuses private local packages, and never modifies your source manifests.
 The placeholder throws when imported and is published under the `bootstrap` dist-tag.
 Select a version you will not need for a real release: npm does not allow version reuse.
 Use `restricted` only for scoped packages with an appropriate npm account.
@@ -105,7 +106,8 @@ then creates, so there is a period without a trusted publisher. If creation fail
 reads registry state again: a matching replacement is treated as success; an empty
 registry triggers an attempt to restore the previous payload; another configuration is
 left untouched. Failures include the previous `entries`, `expected` payload and a
-`recovery` message. Recovery is best effort and restored entries can have new IDs.
+`recovery` message, including when revocation itself has an uncertain result. Recovery is
+best effort and restored entries can have new IDs.
 Preview with `setup --replace --dry-run`; this offline preview cannot show remote state.
 
 ```shell
@@ -217,10 +219,10 @@ The tables below document every CLI argument, including type, allowed values, wh
 
 | Argument                      | Type   | Allowed Values           | Required                                           | Providers      | Description                      |
 | ----------------------------- | ------ | ------------------------ | -------------------------------------------------- | -------------- | -------------------------------- |
-| --provider <type>             | string | github, gitlab, circleci | Yes                                                | All            | Sets the CI provider             |
-| --repository <value>          | string | owner/repo               | Yes for GitHub                                     | github         | GitHub repository identifier     |
+| --provider <type>             | string | github, gitlab, circleci | No; defaults to github                             | All            | Sets the CI provider             |
+| --repository <value>          | string | owner/repo               | Required for GitHub unless inferred                | github         | GitHub repository identifier     |
 | --workflow <file>             | string | Workflow file name       | Conditionally required for GitHub                  | github         | GitHub workflow file             |
-| --project <value>             | string | group/project            | Yes for GitLab                                     | gitlab         | GitLab project identifier        |
+| --project <value>             | string | group/project            | Required for GitLab unless inferred                | gitlab         | GitLab project identifier        |
 | --file <file>                 | string | CI config file path      | Yes for GitLab, optional workflow alias for GitHub | github, gitlab | Provider config file path        |
 | --environment <name>          | string | Any environment name     | No                                                 | github, gitlab | Protected environment (optional) |
 | --org-id <id>                 | string | UUID/string              | Yes for CircleCI                                   | circleci       | CircleCI org id                  |
@@ -383,7 +385,8 @@ main()
 The existing `setupTrustedPublish`, `listTrustedPublish`, `verifyTrustedPublish` and
 `revokeTrustedPublish` functions still return numeric exit codes. Their `*Detailed`
 variants return `{ exitCode, summary, results }`, including entries, trust IDs and
-expected payloads where applicable. CLI `--json` prints `{ summary, results }`.
+expected payloads where applicable. CLI `--json` writes `{ summary, results }` directly
+to stdout, independent of log levels or `NODE_ENV`.
 
 ```ts
 const config = await resolveTrustedPublishConfig({
@@ -425,7 +428,8 @@ including list and verify.
 In an interactive terminal, an OTP challenge prompts for a code or opens npm's browser
 2FA page and retries once. Concurrent requests share the in-flight authentication.
 `--json`, `--silent` and noninteractive usage require an OTP or a Node API
-`authenticate(challenge)` callback; they never open an interactive prompt. Authentication
+`authenticate(challenge)` callback when the registry requests 2FA; they never open an
+interactive prompt. Authentication
 responses are held in memory, not written to disk. Do not put credentials in tracked config.
 
 The account needs 2FA and write access, and the package must already exist. Tokens with

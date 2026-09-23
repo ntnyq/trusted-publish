@@ -1,7 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { consola } from 'consola'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   listTrustedPublishDetailed,
@@ -42,7 +41,7 @@ describe('management output', () => {
       .mockResolvedValueOnce(Response.json([entry]))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
     vi.stubGlobal('fetch', request)
-    const log = vi.spyOn(consola, 'log').mockImplementation(() => {})
+    const log = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
     const report = await listTrustedPublishDetailed(config)
     expect(report.results[0]?.entries).toStrictEqual([entry])
     expect(JSON.parse(String(log.mock.calls[0]?.[0])).results[0].entries).toStrictEqual([entry])

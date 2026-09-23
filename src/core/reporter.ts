@@ -74,7 +74,7 @@ export function createReporter(config: TrustedPublishConfig) {
     },
     summary(summary: Summary, results: PackageCommandResult[]) {
       if (config.json) {
-        consola.log(JSON.stringify({ summary, results }, null, 2))
+        process.stdout.write(`${JSON.stringify({ summary, results }, null, 2)}\n`)
         return
       }
 

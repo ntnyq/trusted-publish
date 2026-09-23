@@ -25,7 +25,17 @@ export async function replaceTrust(
       message: 'replace requires exactly one existing entry with an ID',
     }
   }
-  await client.revoke(pkg.name, previous.id)
+  try {
+    await client.revoke(pkg.name, previous.id)
+  } catch (error) {
+    return {
+      ...base,
+      status: 'failed',
+      message: error instanceof Error ? error.message : String(error),
+      recovery:
+        'revocation failed or its outcome is unknown; inspect registry state before retrying; previous payload is retained in entries',
+    }
+  }
   try {
     await client.setup(pkg.name, expected)
     return { ...base, status: 'configured', message: 'trusted publisher replaced' }

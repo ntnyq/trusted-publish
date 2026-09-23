@@ -95,7 +95,7 @@ export async function runBootstrapDetailed(
           `# ${pkg.name}\n\nPlaceholder reserved for the first trusted publication.\n`,
         )
         if (!config.dryRun) {
-          await publishPlaceholder(directory, access, config)
+          await publishPlaceholder(directory, access, config, pkg.name)
         }
         return {
           ...base,

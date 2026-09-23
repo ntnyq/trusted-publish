@@ -88,6 +88,19 @@ describe('replacement and batch recovery', () => {
     expect(request).toHaveBeenCalledTimes(5)
   })
 
+  it('retains recovery data when the revoke response is uncertain', async () => {
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce(conflict())
+      .mockResolvedValueOnce(Response.json([previous]))
+      .mockRejectedValueOnce(new Error('connection closed'))
+    vi.stubGlobal('fetch', request)
+    const report = await runSetupDetailed(config, { replace: true })
+    expect(report.results[0]?.entries).toStrictEqual([previous])
+    expect(report.results[0]?.recovery).toContain('outcome is unknown')
+    expect(request).toHaveBeenCalledTimes(3)
+  })
+
   it('reports failed recovery without hiding the old payload', async () => {
     const request = vi
       .fn()

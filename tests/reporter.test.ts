@@ -14,7 +14,7 @@ describe('reporter', () => {
     const successSpy = vi.spyOn(consola, 'success').mockImplementation(() => {})
     const warnSpy = vi.spyOn(consola, 'warn').mockImplementation(() => {})
     const errorSpy = vi.spyOn(consola, 'error').mockImplementation(() => {})
-    const logSpy = vi.spyOn(consola, 'log').mockImplementation(() => {})
+    const logSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
     const reporter = createReporter({
       ...DEFAULT_CONFIG,
       json: true,
