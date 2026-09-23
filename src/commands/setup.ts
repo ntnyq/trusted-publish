@@ -4,12 +4,21 @@ import { buildTrustConfig } from '../core/providers'
 import { createReporter, summarize } from '../core/reporter'
 import { matchesTrustConfig } from '../core/trust-config'
 import type { CommandReport, PackageCommandResult, TrustedPublishConfig } from '../core/types'
+import { replaceTrust } from './replace'
 import { createCommandClient, runPackageCommand } from './shared'
+
+/**
+ * Optional destructive update behavior, enabled only by explicit request.
+ */
+export interface SetupOptions {
+  replace?: boolean
+}
 
 /**
  * Configures trusted publishers for selected packages.
  *
  * @param config - Resolved runtime configuration.
+ * @param options - Explicit replacement controls.
  * @returns Structured report where `0` means success and `1` means partial/full failure.
  *
  * @example
@@ -17,7 +26,10 @@ import { createCommandClient, runPackageCommand } from './shared'
  * const code = await runSetup(config)
  * ```
  */
-export async function runSetupDetailed(config: TrustedPublishConfig): Promise<CommandReport> {
+export async function runSetupDetailed(
+  config: TrustedPublishConfig,
+  options: SetupOptions = {},
+): Promise<CommandReport> {
   const reporter = createReporter(config)
   const client = createCommandClient(config)
 
@@ -36,7 +48,9 @@ export async function runSetupDetailed(config: TrustedPublishConfig): Promise<Co
         packageName: pkg.name,
         packageDir: pkg.dir,
         status: 'skipped',
-        message: 'dry-run (no changes applied)',
+        message: options.replace
+          ? 'dry-run: replace conflicting entry (revoke then create; non-atomic)'
+          : 'dry-run (no changes applied)',
         expected: trustConfig,
       } satisfies PackageCommandResult
     }
@@ -64,6 +78,10 @@ export async function runSetupDetailed(config: TrustedPublishConfig): Promise<Co
           } satisfies PackageCommandResult
         }
 
+        if (options.replace) {
+          return replaceTrust(client, pkg, existing, trustConfig)
+        }
+
         return {
           packageName: pkg.name,
           packageDir: pkg.dir,
@@ -86,9 +104,13 @@ export async function runSetupDetailed(config: TrustedPublishConfig): Promise<Co
 /**
  * Runs setup and returns its exit code.
  * @param config - Runtime config.
+ * @param options - Explicit replacement controls.
  * @returns Exit code.
  */
-export async function runSetup(config: TrustedPublishConfig): Promise<number> {
-  const report = await runSetupDetailed(config)
+export async function runSetup(
+  config: TrustedPublishConfig,
+  options?: SetupOptions,
+): Promise<number> {
+  const report = await runSetupDetailed(config, options)
   return report.exitCode
 }

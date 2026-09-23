@@ -98,6 +98,41 @@ code; `bootstrapTrustedPublishDetailed` returns a report. Resolve config with
 so npm authentication prompts cannot overlap. JSON/silent mode suppresses npm output;
 provide credentials/OTP in advance in those modes.
 
+## Replace, revoke in bulk, and resume
+
+`setup --replace` explicitly permits replacing one conflicting trust entry. It revokes
+then creates, so there is a period without a trusted publisher. If creation fails, it
+reads registry state again: a matching replacement is treated as success; an empty
+registry triggers an attempt to restore the previous payload; another configuration is
+left untouched. Failures include the previous `entries`, `expected` payload and a
+`recovery` message. Recovery is best effort and restored entries can have new IDs.
+Preview with `setup --replace --dry-run`; this offline preview cannot show remote state.
+
+```shell
+trusted-publish setup --replace --profile release --dry-run
+trusted-publish setup --replace --profile release
+trusted-publish revoke --matching --profile release --dry-run
+trusted-publish revoke --matching --profile release
+trusted-publish setup --profile release --json > setup-results.json
+trusted-publish setup --profile release --retry-from setup-results.json --json > retry-results.json
+```
+
+`revoke --matching` lists each package and revokes only its uniquely matching trust ID.
+It requires expected provider claims and permissions. Its dry-run performs GET requests
+to show the IDs but sends no DELETE requests. `--id` still selects one package and
+cannot be combined with `--matching`.
+
+`--retry-from` reads a previous JSON report and intersects failed package names with the
+current local/remote selection and include/exclude filters. It never imports executable
+config or credentials from a report. Skipped fail-fast packages are not retried by this
+option; rerun the original selection to include them. No matching failed packages is a
+successful no-op. Save each retry to a different file to avoid truncating the input report.
+
+Node API: `setupTrustedPublishDetailed(config, { replace: true })`,
+`revokeTrustedPublishDetailed(config, { matching: true })`, and the `retryFrom` config input
+provide the same behavior. For matching revoke, resolve config with `command: 'verify'`
+or supply a complete setup config.
+
 ## Diagnose readiness
 
 ```shell
@@ -150,6 +185,7 @@ The tables below document every CLI argument, including type, allowed values, wh
 | ---------------------------- | ------- | ---------------------- | -------------------------------- | -------------------------- | ---------------------------------------------------------- |
 | --cwd <path>                 | string  | Any directory path     | No                               | Current working directory  | Sets the execution root directory                          |
 | --config <path>              | string  | Any config file path   | No                               | Auto-discovery             | Specifies a config file path                               |
+| --retry-from <path>          | string  | JSON report path       | No                               | None                       | Select only previously failed packages                     |
 | --profile <name>             | string  | Key in config profiles | No                               | None                       | Uses a named config profile                                |
 | --package <name>             | string  | npm package name       | No                               | None                       | Processes a single package only                            |
 | --remote-package <name>      | string  | npm package name       | No                               | None                       | Select a remote package without a local manifest           |
@@ -201,13 +237,17 @@ The tables below document every CLI argument, including type, allowed values, wh
 | --allow-stage-publish | boolean | true/false     | No       | false   | Adds createStagedPackage |
 
 Setup, plan and verify require provider claims and at least one permission from CLI flags or config.
-List and revoke need neither claims nor permissions. Revoke by ID requires one selected package.
+List and revoke by ID need neither claims nor permissions. Revoke with `--matching` requires both. Revoke by ID requires one selected package.
 
-### Revoke-only Argument
+### Setup and Revoke Arguments
 
-| Argument  | Type   | Allowed Values | Required for | Default | Description                      |
-| --------- | ------ | -------------- | ------------ | ------- | -------------------------------- |
-| --id <id> | string | trust id       | revoke       | None    | Trust configuration id to revoke |
+| Argument     | Command | Default | Description                                                           |
+| ------------ | ------- | ------- | --------------------------------------------------------------------- |
+| `--replace`  | setup   | false   | Revoke then recreate a conflicting trust; attempt recovery on failure |
+| `--id <id>`  | revoke  | None    | Revoke one ID for one selected package                                |
+| `--matching` | revoke  | false   | Find and revoke each selected package's matching ID                   |
+
+Revoke requires exactly one of `--id` or `--matching`.
 
 ## ⚙️ Configuration (Config)
 

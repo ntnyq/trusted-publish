@@ -1,6 +1,7 @@
 import { runList } from './commands/list'
 import { runRevoke } from './commands/revoke'
 import type { RevokeOptions } from './commands/revoke'
+import type { SetupOptions } from './commands/setup'
 import { runSetup } from './commands/setup'
 import { runVerify } from './commands/verify'
 import { NpmTrustClient } from './core/client'
@@ -143,6 +144,7 @@ export function buildTrustedPublishPayload(config: NodeApiRuntimeConfig): TrustC
 
 /**
  * Runs setup operation programmatically.
+ * @param options - Explicit replacement controls.
  *
  * @param config - Resolved runtime configuration.
  * @returns Exit code where `0` means success.
@@ -152,8 +154,11 @@ export function buildTrustedPublishPayload(config: NodeApiRuntimeConfig): TrustC
  * const exitCode = await setupTrustedPublish(config)
  * ```
  */
-export async function setupTrustedPublish(config: NodeApiRuntimeConfig): Promise<number> {
-  return runSetup(config)
+export async function setupTrustedPublish(
+  config: NodeApiRuntimeConfig,
+  options?: SetupOptions,
+): Promise<number> {
+  return runSetup(config, options)
 }
 
 /**

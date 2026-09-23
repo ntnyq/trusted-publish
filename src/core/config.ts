@@ -34,6 +34,7 @@ export interface LoadConfigInput {
   requestTimeoutMs?: number | string
   provider?: ProviderType
   command?: CommandName
+  retryFrom?: string
   remotePackage?: string
   package?: string
   include?: string | string[]
@@ -251,6 +252,11 @@ export async function loadTrustedPublishConfig(
     verbose: cliInput.verbose ?? profileConfig.verbose,
     yes: cliInput.yes ?? profileConfig.yes,
     registry,
+  }
+
+  const retryFrom = cliInput.retryFrom ?? profileConfig.retryFrom
+  if (retryFrom !== undefined) {
+    patch.retryFrom = resolve(cwd, retryFrom)
   }
 
   const remotePackage = cliInput.remotePackage ?? profileConfig.remotePackage

@@ -56,13 +56,13 @@ export async function runList(_) {}
 export async function runListDetailed(_) {}
 export async function runRevoke(_, _) {}
 export async function runRevokeDetailed(_, _) {}
-export async function runSetup(_) {}
-export async function runSetupDetailed(_) {}
+export async function runSetup(_, _) {}
+export async function runSetupDetailed(_, _) {}
 export async function runVerify(_) {}
 export async function runVerifyDetailed(_) {}
 export async function runWithConcurrency(_, _, _, _) {}
-export async function setupTrustedPublish(_) {}
-export async function setupTrustedPublishDetailed(_) {}
+export async function setupTrustedPublish(_, _) {}
+export async function setupTrustedPublishDetailed(_, _) {}
 export async function sleep(_) {}
 export function summarize(_) {}
 export function toArray(_) {}

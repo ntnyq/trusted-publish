@@ -8,10 +8,13 @@ import type { CommandName, TrustedPublishConfig } from './core/types'
 
 const cli = configureCliOptions(cac(name), version)
 
-cli.command('setup', 'configure trusted publisher for selected packages').action(async () => {
-  const config = await loadCliConfig('setup')
-  process.exitCode = await runSetup(config)
-})
+cli
+  .command('setup', 'configure trusted publisher for selected packages')
+  .option('--replace', 'replace conflicting trust with recovery on failure')
+  .action(async options => {
+    const config = await loadCliConfig('setup')
+    process.exitCode = await runSetup(config, { replace: options.replace })
+  })
 
 cli.command('list', 'list trusted publisher configs for selected packages').action(async () => {
   const config = await loadCliConfig('list')
@@ -26,12 +29,16 @@ cli.command('verify', 'verify expected trusted publisher config exists').action(
 cli
   .command('revoke', 'revoke trusted publisher config by id')
   .option('--id <id>', 'trusted publisher config id')
+  .option('--matching', 'resolve a matching trust ID separately for each package')
   .action(async options => {
-    if (!options.id) {
-      throw new Error('revoke command requires --id')
+    if (Boolean(options.id) === Boolean(options.matching)) {
+      throw new Error('revoke requires exactly one of --id or --matching')
     }
-    const config = await loadCliConfig('revoke')
-    process.exitCode = await runRevoke(config, { id: options.id })
+    const config = await loadCliConfig(options.matching ? 'verify' : 'revoke')
+    process.exitCode = await runRevoke(
+      config,
+      options.matching ? { matching: true } : { id: options.id },
+    )
   })
 
 cli

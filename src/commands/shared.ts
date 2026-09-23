@@ -36,8 +36,10 @@ export async function runPackageCommand(
     const result: PackageCommandResult = {
       packageName: config.package || '(selection)',
       packageDir: config.cwd || process.cwd(),
-      status: 'failed',
-      message: 'no packages matched the current selection',
+      status: config.retryFrom ? 'skipped' : 'failed',
+      message: config.retryFrom
+        ? 'no failed packages matched the current selection'
+        : 'no packages matched the current selection',
     }
     reporter.result(result)
     return [result]

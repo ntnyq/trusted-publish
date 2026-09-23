@@ -6,6 +6,7 @@ export function configureCliOptions(cli: CAC, version: string): CAC {
     .option('--cwd <path>', 'working directory')
     .option('--config <path>', 'custom config file')
     .option('--profile <name>', 'config profile')
+    .option('--retry-from <path>', 'limit selection to failed packages in a saved JSON report')
     .option('--provider <type>', 'provider: github|gitlab|circleci')
     .option('--package <name>', 'filter local discovered packages by name')
     .option('--remote-package <name>', 'operate on a registry package without local discovery')

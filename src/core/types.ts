@@ -88,6 +88,7 @@ export interface PackageMeta {
  * Include/exclude selection controls.
  */
 export interface TargetSelectOptions {
+  retryFrom?: string
   remotePackage?: string
   package?: string
   include: string[]
@@ -130,6 +131,7 @@ export interface TrustedPublishConfig {
   registry: string
   requestTimeoutMs: number
   provider: ProviderType
+  retryFrom?: string
   remotePackage?: string
   package?: string
   include: string[]

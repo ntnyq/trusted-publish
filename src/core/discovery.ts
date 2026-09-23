@@ -5,6 +5,7 @@ import { parse } from 'yaml'
 import { DEFAULT_IGNORES } from '../constants'
 import { fileExists } from '../utils'
 import { validatePackageName } from './package-name'
+import { readRetryTargets } from './retry-targets'
 import type { PackageMeta, TrustedPublishConfig } from './types'
 
 interface Manifest {
@@ -140,8 +141,15 @@ async function parsePackage(manifestPath: string): Promise<PackageMeta | null> {
   }
 }
 
-function filterPackages(packages: PackageMeta[], config: TrustedPublishConfig): PackageMeta[] {
+async function filterPackages(
+  packages: PackageMeta[],
+  config: TrustedPublishConfig,
+): Promise<PackageMeta[]> {
+  const failedNames = config.retryFrom
+    ? await readRetryTargets(resolve(config.cwd || process.cwd(), config.retryFrom))
+    : undefined
   return packages
+    .filter(pkg => !failedNames || failedNames.has(pkg.name))
     .filter(pkg => (config.includePrivate ? true : !pkg.private))
     .filter(pkg => (config.package ? pkg.name === config.package : true))
     .filter(pkg => (config.include.length > 0 ? config.include.includes(pkg.name) : true))

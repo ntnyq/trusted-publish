@@ -1,5 +1,7 @@
 import { discoverPackages } from '../core/discovery'
+import { buildTrustConfig } from '../core/providers'
 import { createReporter, summarize } from '../core/reporter'
+import { matchesTrustConfig } from '../core/trust-config'
 import type { CommandReport, PackageCommandResult, TrustedPublishConfig } from '../core/types'
 import { createCommandClient, runPackageCommand } from './shared'
 
@@ -7,7 +9,8 @@ import { createCommandClient, runPackageCommand } from './shared'
  * Revoke command options.
  */
 export interface RevokeOptions {
-  id: string
+  id?: string
+  matching?: boolean
 }
 
 /**
@@ -29,21 +32,43 @@ export async function runRevokeDetailed(
   const reporter = createReporter(config)
   const client = createCommandClient(config)
 
-  if (!options.id) {
-    throw new Error('revoke command requires --id')
+  if (Boolean(options.id) === Boolean(options.matching)) {
+    throw new Error('revoke requires exactly one of --id or --matching')
   }
-  const trustId = options.id
-
+  const expected = options.matching ? buildTrustConfig(config) : undefined
   const packages = await discoverPackages(config)
-  if (packages.length > 1) {
-    throw new Error('revoke by ID requires a single selected package')
+  if (options.id && packages.length > 1) {
+    throw new Error(
+      'revoke by ID requires a single selected package; use --matching for batch revoke',
+    )
   }
 
   reporter.title('npm trusted publisher revoke')
   reporter.info(`Selected packages: ${packages.length}`)
-  reporter.info(`Trust ID: ${trustId}`)
+  reporter.info(
+    options.id ? `Trust ID: ${options.id}` : 'Select the matching trust ID for each package',
+  )
 
   const results = await runPackageCommand(config, packages, reporter, async pkg => {
+    let trustId = options.id
+    if (expected) {
+      const entries = await client.list(pkg.name)
+      const matches = entries.filter(entry => matchesTrustConfig(entry, expected))
+      if (matches.length !== 1 || !matches[0]?.id) {
+        return {
+          packageName: pkg.name,
+          packageDir: pkg.dir,
+          status: 'failed',
+          message: 'expected exactly one matching entry with an ID',
+          entries,
+          expected,
+        }
+      }
+      trustId = matches[0].id
+    }
+    if (!trustId) {
+      throw new Error('no trust ID selected')
+    }
     if (config.dryRun) {
       return {
         packageName: pkg.name,

@@ -52,7 +52,7 @@ export async function runDoctorDetailed(config: TrustedPublishConfig): Promise<C
       error => ({ check: 'authentication', status: 'fail', message: errorMessage(error) }),
     )
     diagnostics.push(await authentication)
-    let entries
+    let entries: TrustConfig[] = []
     try {
       if (await client.packageExists(pkg.name)) {
         diagnostics.push({ check: 'package', status: 'pass', message: 'package exists' })

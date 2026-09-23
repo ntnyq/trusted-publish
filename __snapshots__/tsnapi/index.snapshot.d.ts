@@ -52,6 +52,7 @@ export interface LoadConfigInput {
   requestTimeoutMs?: number | string;
   provider?: ProviderType;
   command?: CommandName;
+  retryFrom?: string;
   remotePackage?: string;
   package?: string;
   include?: string | string[];
@@ -123,12 +124,16 @@ export interface PermissionInput {
   allowStagePublish?: boolean;
 }
 export interface RevokeOptions {
-  id: string;
+  id?: string;
+  matching?: boolean;
 }
 export interface RunWithConcurrencyOptions<R, T> {
   failFast?: boolean;
   shouldStop?: (_: R) => boolean;
   onError?: (_: unknown, _: T, _: number) => void;
+}
+export interface SetupOptions {
+  replace?: boolean;
 }
 export interface Summary {
   total: number;
@@ -139,6 +144,7 @@ export interface Summary {
   skipped: number;
 }
 export interface TargetSelectOptions {
+  retryFrom?: string;
   remotePackage?: string;
   package?: string;
   include: string[];
@@ -178,6 +184,7 @@ export interface TrustedPublishConfig {
   registry: string;
   requestTimeoutMs: number;
   provider: ProviderType;
+  retryFrom?: string;
   remotePackage?: string;
   package?: string;
   include: string[];
@@ -283,13 +290,13 @@ export declare function runList(_: TrustedPublishConfig): Promise<number>;
 export declare function runListDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runRevoke(_: TrustedPublishConfig, _: RevokeOptions): Promise<number>;
 export declare function runRevokeDetailed(_: TrustedPublishConfig, _: RevokeOptions): Promise<CommandReport>;
-export declare function runSetup(_: TrustedPublishConfig): Promise<number>;
-export declare function runSetupDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
+export declare function runSetup(_: TrustedPublishConfig, _?: SetupOptions): Promise<number>;
+export declare function runSetupDetailed(_: TrustedPublishConfig, _?: SetupOptions): Promise<CommandReport>;
 export declare function runVerify(_: TrustedPublishConfig): Promise<number>;
 export declare function runVerifyDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runWithConcurrency<T, R>(_: T[], _: number, _: (_: T, _: number) => Promise<R>, _?: RunWithConcurrencyOptions<R, T>): Promise<R[]>;
-export declare function setupTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
-export declare function setupTrustedPublishDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
+export declare function setupTrustedPublish(_: NodeApiRuntimeConfig, _?: SetupOptions): Promise<number>;
+export declare function setupTrustedPublishDetailed(_: TrustedPublishConfig, _?: SetupOptions): Promise<CommandReport>;
 export declare function sleep(_: number): Promise<void>;
 export declare function summarize(_: PackageCommandResult[]): Summary;
 export declare function toArray(_: string | string[] | undefined): string[];
