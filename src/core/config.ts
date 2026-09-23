@@ -205,16 +205,20 @@ export async function loadTrustedPublishConfig(
     includePrivate: cliInput.includePrivate ?? profileConfig.includePrivate,
     discovery: {
       ...profileConfig.discovery,
-      fromWorkspaces: cliInput.fromWorkspaces ?? profileConfig.discovery.fromWorkspaces,
+      fromWorkspaces:
+        cliInput.fromWorkspaces
+        ?? (cliInput.packageJsonGlobs === undefined
+          ? profileConfig.discovery.fromWorkspaces
+          : false),
       fromGlobs: cliInput.fromGlobs ?? profileConfig.discovery.fromGlobs,
       workspaceGlobs: uniq([
         ...profileConfig.discovery.workspaceGlobs,
         ...toArray(cliInput.workspaceGlobs),
       ]),
-      packageJsonGlobs: uniq([
-        ...profileConfig.discovery.packageJsonGlobs,
-        ...toArray(cliInput.packageJsonGlobs),
-      ]),
+      packageJsonGlobs:
+        cliInput.packageJsonGlobs === undefined
+          ? profileConfig.discovery.packageJsonGlobs
+          : uniq(toArray(cliInput.packageJsonGlobs)),
     },
     claims,
     permissions: parsePermissions(permissionInput),

@@ -57,6 +57,19 @@ trusted-publish revoke --provider github --repository owner/repo --workflow rele
 | verify  | Verify expected trust payload exists                  |
 | revoke  | Revoke trust config by id                             |
 
+## Package selection
+
+Workspace declarations take precedence over recursive glob discovery. npm, Yarn and Bun
+use `package.json` workspaces; pnpm uses the YAML `packages` field (including inline arrays,
+comments and negated patterns). Declared empty workspaces select no packages. Invalid
+workspace metadata fails instead of silently widening the selection.
+
+`--package` filters local discovered packages. `--package-json-globs` replaces the default
+`**/package.json` pattern and disables workspace discovery unless `--from-workspaces` is
+explicitly supplied. Use `--no-from-workspaces` to scan custom globs even in a workspace.
+Set `discovery.fromWorkspaces: false` with custom `discovery.packageJsonGlobs` in config
+files for the same behavior. `--workspace-globs` appends workspace patterns.
+
 ## 📝 CLI Reference (Complete)
 
 The tables below document every CLI argument, including type, allowed values, whether it is required, default value, and description. Requiredness can vary by command and provider.
@@ -73,9 +86,9 @@ The tables below document every CLI argument, including type, allowed values, wh
 | --exclude <names>            | string  | Comma-separated names  | No                               | Empty                      | Excludes the specified packages              |
 | --ignores <globs>            | string  | Comma-separated globs  | No                               | Empty                      | Adds ignore patterns                         |
 | --workspace-globs <globs>    | string  | Comma-separated globs  | No                               | Empty                      | Adds workspace discovery patterns            |
-| --package-json-globs <globs> | string  | Comma-separated globs  | No                               | \*\*/package.json          | package.json scan patterns                   |
+| --package-json-globs <globs> | string  | Comma-separated globs  | No                               | \*\*/package.json          | Replaces package.json scan patterns          |
 | --from-workspaces            | boolean | true/false             | No                               | true                       | Enables workspace-based discovery            |
-| --from-globs                 | boolean | true/false             | No                               | true                       | Enables glob-based discovery                 |
+| --from-globs                 | boolean | true/false             | No                               | true                       | Enables glob fallback without workspaces     |
 | --include-private            | boolean | true/false             | No                               | false                      | Includes private packages                    |
 | --concurrency <n>            | number  | >= 1                   | No                               | 4                          | Number of concurrent package tasks           |
 | --fail-fast                  | boolean | true/false             | No                               | false                      | Stops scheduling new tasks after first error |

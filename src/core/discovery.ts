@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { glob } from 'tinyglobby'
+import { parse } from 'yaml'
 import { DEFAULT_IGNORES } from '../constants'
 import { fileExists } from '../utils'
 import type { PackageMeta, TrustedPublishConfig } from './types'
@@ -25,14 +26,16 @@ export async function discoverPackages(config: TrustedPublishConfig): Promise<Pa
   const cwd = config.cwd || process.cwd()
   const manifests = new Set<string>()
 
-  if (config.discovery.fromWorkspaces) {
-    const workspaceManifests = await discoverFromWorkspaces(config)
+  const workspaceManifests = config.discovery.fromWorkspaces
+    ? await discoverFromWorkspaces(config)
+    : undefined
+  if (workspaceManifests !== undefined) {
     for (const m of workspaceManifests) {
       manifests.add(m)
     }
   }
 
-  if (config.discovery.fromGlobs) {
+  if (config.discovery.fromGlobs && workspaceManifests === undefined) {
     const globManifests = await glob(config.discovery.packageJsonGlobs, {
       cwd,
       ignore: [...DEFAULT_IGNORES, ...config.ignores],
@@ -56,65 +59,44 @@ export async function discoverPackages(config: TrustedPublishConfig): Promise<Pa
   return filterPackages(packages, config)
 }
 
-async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<string[]> {
+async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<string[] | undefined> {
   const cwd = config.cwd || process.cwd()
-  const patterns = new Set<string>()
-
+  const patterns = new Set(config.discovery.workspaceGlobs)
+  let hasWorkspaceConfig = patterns.size > 0
   const pnpmWorkspacePath = resolve(cwd, 'pnpm-workspace.yaml')
   if (await fileExists(pnpmWorkspacePath)) {
-    const raw = await readFile(pnpmWorkspacePath, 'utf8')
-    for (const line of raw.split(/\r?\n/)) {
-      const match = line.match(/^\s*-\s*['"]?(.+?)['"]?\s*$/)
-      if (match?.[1]) {
-        patterns.add(match[1])
+    const workspace: unknown = parse(await readFile(pnpmWorkspacePath, 'utf8'))
+    if (workspace && typeof workspace === 'object' && 'packages' in workspace) {
+      hasWorkspaceConfig = true
+      for (const pattern of parseWorkspacePatterns(workspace.packages, pnpmWorkspacePath)) {
+        patterns.add(pattern)
       }
     }
   }
 
   const rootPkgPath = resolve(cwd, 'package.json')
   if (await fileExists(rootPkgPath)) {
-    try {
-      const raw = await readFile(rootPkgPath, 'utf8')
-      const pkg = JSON.parse(raw) as {
-        workspaces?: string[] | { packages?: string[] }
-      }
-      if (Array.isArray(pkg.workspaces)) {
-        for (const item of pkg.workspaces) {
-          patterns.add(item)
-        }
-      } else if (Array.isArray(pkg.workspaces?.packages)) {
-        for (const item of pkg.workspaces.packages) {
-          patterns.add(item)
-        }
-      }
-    } catch {
-      // Ignore malformed root package.json workspace metadata and continue.
-    }
-  }
-
-  const bunPath = resolve(cwd, 'bunfig.toml')
-  if (await fileExists(bunPath)) {
-    const raw = await readFile(bunPath, 'utf8')
-    const match = raw.match(/workspaces\s*=\s*\[(.*?)\]/s)
-    if (match?.[1]) {
-      for (const item of match[1].split(',')) {
-        const value = item.trim().replace(/^['"]|['"]$/g, '')
-        if (value) {
-          patterns.add(value)
-        }
+    const pkg = JSON.parse(await readFile(rootPkgPath, 'utf8')) as { workspaces?: unknown }
+    if (pkg.workspaces !== undefined) {
+      hasWorkspaceConfig = true
+      const workspaces = pkg.workspaces
+      const values =
+        workspaces && typeof workspaces === 'object' && 'packages' in workspaces
+          ? workspaces.packages
+          : workspaces
+      for (const pattern of parseWorkspacePatterns(values, rootPkgPath)) {
+        patterns.add(pattern)
       }
     }
   }
 
-  for (const item of config.discovery.workspaceGlobs) {
-    patterns.add(item)
+  if (!hasWorkspaceConfig) {
+    return undefined
   }
-
   if (patterns.size === 0) {
     return []
   }
-
-  const manifests = await glob(
+  return glob(
     [...patterns].map(pattern => `${pattern.replace(/\/$/, '')}/package.json`),
     {
       cwd,
@@ -123,8 +105,13 @@ async function discoverFromWorkspaces(config: TrustedPublishConfig): Promise<str
       absolute: true,
     },
   )
+}
 
-  return manifests
+function parseWorkspacePatterns(value: unknown, source: string): string[] {
+  if (!Array.isArray(value) || !value.every(item => typeof item === 'string' && item.length > 0)) {
+    throw new Error(`workspace packages must be an array of non-empty strings: ${source}`)
+  }
+  return value
 }
 
 async function parsePackage(manifestPath: string): Promise<PackageMeta | null> {
@@ -138,7 +125,7 @@ async function parsePackage(manifestPath: string): Promise<PackageMeta | null> {
       name: pkg.name,
       private: Boolean(pkg.private),
       manifestPath,
-      dir: manifestPath.replace(/\/package\.json$/, ''),
+      dir: dirname(manifestPath),
     }
   } catch {
     return null
