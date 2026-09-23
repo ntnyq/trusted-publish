@@ -22,6 +22,7 @@ import type {
   TrustPermission,
 } from './types'
 import { validateConfig } from './validation'
+import { inferRepository } from './workflow'
 
 /**
  * Input accepted by config loader before defaults are resolved.
@@ -283,6 +284,29 @@ export async function loadTrustedPublishConfig(
 
   if (cliInput.authenticate) {
     patch.authenticate = cliInput.authenticate
+  }
+
+  if (
+    !patch.remotePackage
+    && (cliInput.command !== 'doctor' || claims.workflow || claims.file)
+    && !claims.repository
+    && (patch.provider || profileConfig.provider) === 'github'
+  ) {
+    const inferredRepository = await inferRepository(cwd, 'github')
+    if (inferredRepository) {
+      claims.repository = inferredRepository
+    }
+  }
+  if (
+    !patch.remotePackage
+    && (cliInput.command !== 'doctor' || claims.file)
+    && !claims.project
+    && (patch.provider || profileConfig.provider) === 'gitlab'
+  ) {
+    const inferredProject = await inferRepository(cwd, 'gitlab')
+    if (inferredProject) {
+      claims.project = inferredProject
+    }
   }
 
   const merged = mergeConfig(profileConfig, patch)

@@ -156,6 +156,23 @@ export class NpmTrustClient {
     }
   }
 
+  /**
+   * Checks the identity associated with the current npm credentials.
+   * @returns Authenticated npm username.
+   */
+  async whoami(): Promise<string> {
+    const body = await this.request(`${this.options.registry}/-/whoami`, { method: 'GET' }, true)
+    if (
+      !body
+      || typeof body !== 'object'
+      || !('username' in body)
+      || typeof body.username !== 'string'
+    ) {
+      throw new Error('invalid whoami response: expected username')
+    }
+    return body.username
+  }
+
   private async request(url: string, init: RequestInit, asJson = false): Promise<unknown> {
     if (this.options.dryRun && init.method !== 'GET') {
       return Response.json({ dryRun: true }, { status: 200 })

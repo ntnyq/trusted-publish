@@ -1,7 +1,7 @@
 import { cac } from 'cac'
 import { name, version } from '../package.json'
 import { configureCliOptions } from './cli-options'
-import { runBootstrap, runList, runRevoke, runSetup, runVerify } from './commands'
+import { runBootstrap, runDoctor, runList, runRevoke, runSetup, runVerify } from './commands'
 import { authenticateInteractively } from './core/auth'
 import { loadTrustedPublishConfig } from './core/config'
 import type { CommandName, TrustedPublishConfig } from './core/types'
@@ -53,6 +53,13 @@ cli
       access: options.access,
       keepTemp: options.keepTemp,
     })
+  })
+
+cli
+  .command('doctor', 'check package existence, authentication and trusted publisher readiness')
+  .action(async () => {
+    const config = await loadCliConfig('doctor')
+    process.exitCode = await runDoctor(config)
   })
 
 cli.help()

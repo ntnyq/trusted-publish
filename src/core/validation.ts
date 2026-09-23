@@ -67,8 +67,15 @@ export function validateConfig(config: TrustedPublishConfig, command: CommandNam
     if (!config.claims.workflow && !config.claims.file) {
       throw new Error('github provider requires workflow/file')
     }
+    const workflow = config.claims.workflow || config.claims.file || ''
+    if (!/^[^/\\]+\.ya?ml$/.test(workflow)) {
+      throw new Error('github workflow must be a .yml/.yaml filename, not a path')
+    }
     if (!config.claims.repository) {
       throw new Error('github provider requires repository')
+    }
+    if (!/^[\w.-]+\/[\w.-]+$/.test(config.claims.repository)) {
+      throw new Error('github repository must be owner/repo')
     }
   }
 

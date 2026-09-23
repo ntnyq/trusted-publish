@@ -1,3 +1,4 @@
+export * from './commands/doctor'
 export * from './commands/bootstrap'
 export * from './commands/list'
 export * from './commands/revoke'

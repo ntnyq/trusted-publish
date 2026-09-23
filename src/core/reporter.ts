@@ -56,6 +56,9 @@ export function createReporter(config: TrustedPublishConfig) {
           `${RESULT_STATUS_PREFIXES[result.status]} ${result.packageName} (${result.packageDir}) -> ${result.message}`,
         )
       }
+      if (!config.silent && result.diagnostics) {
+        consola.log(JSON.stringify(result.diagnostics, null, 2))
+      }
       if (!config.silent && result.bootstrap) {
         consola.log(JSON.stringify(result.bootstrap, null, 2))
       }

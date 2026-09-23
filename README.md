@@ -52,14 +52,15 @@ trusted-publish revoke --remote-package @scope/pkg --id trust-id
 
 ## 🧰 Commands
 
-| Command   | Purpose                                                  |
-| --------- | -------------------------------------------------------- |
-| bootstrap | Publish a minimal placeholder for an unpublished package |
-| setup     | Create trusted publisher config for selected packages    |
-| list      | List complete entries, including IDs and claims          |
-| plan      | Preview exact payloads without network requests          |
-| verify    | Verify expected trust payload exists                     |
-| revoke    | Revoke trust config by id                                |
+| Command   | Purpose                                                                 |
+| --------- | ----------------------------------------------------------------------- |
+| doctor    | Diagnose authentication, package visibility and configuration readiness |
+| bootstrap | Publish a minimal placeholder for an unpublished package                |
+| setup     | Create trusted publisher config for selected packages                   |
+| list      | List complete entries, including IDs and claims                         |
+| plan      | Preview exact payloads without network requests                         |
+| verify    | Verify expected trust payload exists                                    |
+| revoke    | Revoke trust config by id                                               |
 
 ## Bootstrap a new package
 
@@ -96,6 +97,33 @@ code; `bootstrapTrustedPublishDetailed` returns a report. Resolve config with
 `command: 'bootstrap'`; claims and permissions are unnecessary. Publication runs serially
 so npm authentication prompts cannot overlap. JSON/silent mode suppresses npm output;
 provide credentials/OTP in advance in those modes.
+
+## Diagnose readiness
+
+```shell
+trusted-publish doctor --remote-package @scope/pkg --json
+trusted-publish doctor --workflow release.yml --allow-publish
+```
+
+Doctor only sends GET requests. It checks authenticated identity, package visibility and
+trust entries. When expected claims are supplied it also validates configuration and
+reports conflicts with both actual and expected payloads. HTTP 404 can mean an unpublished
+package or a private package hidden from the current account. Reading an entry successfully
+does not prove permission to change it. Warnings alone exit successfully; failed checks exit 1.
+
+For local GitHub projects, doctor parses the workflow YAML and checks effective
+`id-token: write` permission on jobs with direct npm/pnpm/yarn publish commands. Missing
+files and missing OIDC permission fail; reusable workflows/release actions without a
+direct publish command produce a warning for manual inspection. Remote package selectors
+and other providers skip local workflow inspection.
+
+GitHub/GitLab repository paths can be inferred from the root `package.json.repository`
+when the provider matches and no explicit repository/project was supplied. GitHub shorthand,
+HTTPS and SSH URLs are supported. Workflow selection remains explicit; GitHub requires
+only the `.yml`/`.yaml` filename, not `.github/workflows/...`.
+
+Node API: resolve with `command: 'doctor'`, then use `doctorTrustedPublish` for an exit
+code or `doctorTrustedPublishDetailed` for results including typed `diagnostics`.
 
 ## Package selection
 

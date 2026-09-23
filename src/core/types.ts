@@ -194,6 +194,15 @@ export interface Config extends ConfigOverride {
 export type CommandResultStatus = 'configured' | 'already' | 'failed' | 'skipped' | 'revoked'
 
 /**
+ * Read-only preflight finding. Warnings do not cause a failing exit code.
+ */
+export interface Diagnostic {
+  check: 'package' | 'authentication' | 'trust' | 'configuration' | 'workflow'
+  status: 'pass' | 'warn' | 'fail'
+  message: string
+}
+
+/**
  * Result item emitted by command runners.
  */
 export interface PackageCommandResult {
@@ -202,6 +211,7 @@ export interface PackageCommandResult {
   status: CommandResultStatus
   message: string
   trustId?: string
+  diagnostics?: Diagnostic[]
   entries?: TrustConfig[]
   expected?: TrustConfig
   bootstrap?: { version: string; access: string; directory?: string; settingsUrl?: string }

@@ -34,6 +34,11 @@ export interface Config extends ConfigOverride {
 export interface ConfigOverride extends Omit<Partial<TrustedPublishConfig>, 'discovery'> {
   discovery?: Partial<DiscoveryConfig>;
 }
+export interface Diagnostic {
+  check: 'package' | 'authentication' | 'trust' | 'configuration' | 'workflow';
+  status: 'pass' | 'warn' | 'fail';
+  message: string;
+}
 export interface DiscoveryConfig {
   fromWorkspaces: boolean;
   fromGlobs: boolean;
@@ -95,6 +100,7 @@ export interface PackageCommandResult {
   status: CommandResultStatus;
   message: string;
   trustId?: string;
+  diagnostics?: Diagnostic[];
   entries?: TrustConfig[];
   expected?: TrustConfig;
   bootstrap?: {
@@ -225,6 +231,7 @@ export declare class NpmTrustClient {
   setup(_: string, _: TrustConfig): Promise<Response>;
   revoke(_: string, _: string): Promise<Response>;
   packageExists(_: string): Promise<boolean>;
+  whoami(): Promise<string>;
   private request;
   private authenticate;
   private requestWithRetry;
@@ -256,6 +263,8 @@ export declare function createTrustedPublishClient(_: TrustedPublishConfig): Npm
 export declare function defineConfig<T extends Config>(_: T): T;
 export declare function discoverPackages(_: TrustedPublishConfig): Promise<PackageMeta[]>;
 export declare function discoverTrustedPublishPackages(_: NodeApiRuntimeConfig): Promise<PackageMeta[]>;
+export declare function doctorTrustedPublish(_: TrustedPublishConfig): Promise<number>;
+export declare function doctorTrustedPublishDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function listTrustedPublish(_: NodeApiRuntimeConfig): Promise<number>;
 export declare function listTrustedPublishDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function loadTrustedPublishConfig(_: LoadConfigInput): Promise<TrustedPublishConfig>;
@@ -268,6 +277,8 @@ export declare function revokeTrustedPublish(_: NodeApiRuntimeConfig, _: NodeApi
 export declare function revokeTrustedPublishDetailed(_: TrustedPublishConfig, _: RevokeOptions): Promise<CommandReport>;
 export declare function runBootstrap(_: TrustedPublishConfig, _?: BootstrapOptions): Promise<number>;
 export declare function runBootstrapDetailed(_: TrustedPublishConfig, _?: BootstrapOptions): Promise<CommandReport>;
+export declare function runDoctor(_: TrustedPublishConfig): Promise<number>;
+export declare function runDoctorDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runList(_: TrustedPublishConfig): Promise<number>;
 export declare function runListDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runRevoke(_: TrustedPublishConfig, _: RevokeOptions): Promise<number>;

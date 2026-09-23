@@ -216,3 +216,8 @@ export {
   runBootstrap as bootstrapTrustedPublish,
   runBootstrapDetailed as bootstrapTrustedPublishDetailed,
 } from './commands/bootstrap'
+
+export {
+  runDoctor as doctorTrustedPublish,
+  runDoctorDetailed as doctorTrustedPublishDetailed,
+} from './commands/doctor'
