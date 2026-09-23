@@ -6,6 +6,11 @@ export interface AuthenticationChallenge {
   authUrl?: string;
   doneUrl?: string;
 }
+export interface BootstrapOptions {
+  version?: string;
+  access?: 'public' | 'restricted';
+  keepTemp?: boolean;
+}
 export interface ClaimsInput {
   repository?: string;
   workflow?: string;
@@ -92,6 +97,12 @@ export interface PackageCommandResult {
   trustId?: string;
   entries?: TrustConfig[];
   expected?: TrustConfig;
+  bootstrap?: {
+    version: string;
+    access: string;
+    directory?: string;
+    settingsUrl?: string;
+  };
   recovery?: string;
 }
 export interface PackageMeta {
@@ -213,6 +224,7 @@ export declare class NpmTrustClient {
   list(_: string): Promise<NpmTrustRemoteItem[]>;
   setup(_: string, _: TrustConfig): Promise<Response>;
   revoke(_: string, _: string): Promise<Response>;
+  packageExists(_: string): Promise<boolean>;
   private request;
   private authenticate;
   private requestWithRetry;
@@ -226,6 +238,8 @@ export declare class NpmTrustClient {
 // #endregion
 
 // #region Functions
+export declare function bootstrapTrustedPublish(_: TrustedPublishConfig, _?: BootstrapOptions): Promise<number>;
+export declare function bootstrapTrustedPublishDetailed(_: TrustedPublishConfig, _?: BootstrapOptions): Promise<CommandReport>;
 export declare function buildTrustConfig(_: TrustedPublishConfig): TrustConfig;
 export declare function buildTrustedPublishPayload(_: NodeApiRuntimeConfig): TrustConfig;
 export declare function createReporter(_: TrustedPublishConfig): {
@@ -252,6 +266,8 @@ export declare function resolveCwd(_?: string): string;
 export declare function resolveTrustedPublishConfig(_: NodeApiConfigInput): Promise<TrustedPublishConfig>;
 export declare function revokeTrustedPublish(_: NodeApiRuntimeConfig, _: NodeApiRevokeOptions): Promise<number>;
 export declare function revokeTrustedPublishDetailed(_: TrustedPublishConfig, _: RevokeOptions): Promise<CommandReport>;
+export declare function runBootstrap(_: TrustedPublishConfig, _?: BootstrapOptions): Promise<number>;
+export declare function runBootstrapDetailed(_: TrustedPublishConfig, _?: BootstrapOptions): Promise<CommandReport>;
 export declare function runList(_: TrustedPublishConfig): Promise<number>;
 export declare function runListDetailed(_: TrustedPublishConfig): Promise<CommandReport>;
 export declare function runRevoke(_: TrustedPublishConfig, _: RevokeOptions): Promise<number>;

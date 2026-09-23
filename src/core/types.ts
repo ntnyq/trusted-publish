@@ -204,6 +204,7 @@ export interface PackageCommandResult {
   trustId?: string
   entries?: TrustConfig[]
   expected?: TrustConfig
+  bootstrap?: { version: string; access: string; directory?: string; settingsUrl?: string }
   recovery?: string
 }
 

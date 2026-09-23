@@ -12,6 +12,7 @@ export class NpmTrustClient {
   async list(_) {}
   async setup(_, _) {}
   async revoke(_, _) {}
+  async packageExists(_) {}
   async request(_, _, _) {}
   async authenticate(_, _) {}
   async requestWithRetry(_, _) {}
@@ -25,6 +26,8 @@ export class NpmTrustClient {
 // #endregion
 
 // #region Functions
+export async function bootstrapTrustedPublish(_, _) {}
+export async function bootstrapTrustedPublishDetailed(_, _) {}
 export function buildTrustConfig(_) {}
 export function buildTrustedPublishPayload(_) {}
 export function createReporter(_) {}
@@ -42,6 +45,8 @@ export function resolveCwd(_) {}
 export async function resolveTrustedPublishConfig(_) {}
 export async function revokeTrustedPublish(_, _) {}
 export async function revokeTrustedPublishDetailed(_, _) {}
+export async function runBootstrap(_, _) {}
+export async function runBootstrapDetailed(_, _) {}
 export async function runList(_) {}
 export async function runListDetailed(_) {}
 export async function runRevoke(_, _) {}

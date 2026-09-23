@@ -99,3 +99,8 @@ export const HTTP_EMPTY_BODY_STATUSES: readonly number[] = [
   HTTP_RESET_CONTENT,
   HTTP_NOT_MODIFIED,
 ]
+
+/**
+ * Registry package not found status.
+ */
+export const HTTP_STATUS_NOT_FOUND = 404

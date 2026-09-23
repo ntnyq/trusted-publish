@@ -211,3 +211,8 @@ export { runSetupDetailed as setupTrustedPublishDetailed } from './commands/setu
 export { runListDetailed as listTrustedPublishDetailed } from './commands/list'
 export { runVerifyDetailed as verifyTrustedPublishDetailed } from './commands/verify'
 export { runRevokeDetailed as revokeTrustedPublishDetailed } from './commands/revoke'
+
+export {
+  runBootstrap as bootstrapTrustedPublish,
+  runBootstrapDetailed as bootstrapTrustedPublishDetailed,
+} from './commands/bootstrap'

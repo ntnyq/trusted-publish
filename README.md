@@ -52,13 +52,50 @@ trusted-publish revoke --remote-package @scope/pkg --id trust-id
 
 ## 🧰 Commands
 
-| Command | Purpose                                               |
-| ------- | ----------------------------------------------------- |
-| setup   | Create trusted publisher config for selected packages |
-| list    | List complete entries, including IDs and claims       |
-| plan    | Preview exact payloads without network requests       |
-| verify  | Verify expected trust payload exists                  |
-| revoke  | Revoke trust config by id                             |
+| Command   | Purpose                                                  |
+| --------- | -------------------------------------------------------- |
+| bootstrap | Publish a minimal placeholder for an unpublished package |
+| setup     | Create trusted publisher config for selected packages    |
+| list      | List complete entries, including IDs and claims          |
+| plan      | Preview exact payloads without network requests          |
+| verify    | Verify expected trust payload exists                     |
+| revoke    | Revoke trust config by id                                |
+
+## Bootstrap a new package
+
+`setup` manages trust for an existing registry package. For a package that has never
+been published, use `bootstrap` explicitly:
+
+```shell
+trusted-publish bootstrap --remote-package @scope/new-package --dry-run --keep-temp
+trusted-publish bootstrap --remote-package @scope/new-package --initial-version 0.0.0 --access public --yes
+trusted-publish setup --remote-package @scope/new-package --repository owner/repo --workflow release.yml --allow-publish
+```
+
+Bootstrap generates an isolated minimal package, checks existence before applying, and
+publishes through the installed npm CLI with lifecycle scripts disabled. It skips existing
+packages, refuses private local packages, and never modifies your source manifests.
+The placeholder throws when imported and is published under the `bootstrap` dist-tag.
+Select a version you will not need for a real release: npm does not allow version reuse.
+Use `restricted` only for scoped packages with an appropriate npm account.
+
+Dry-run performs no registry requests or publication. Temporary directories are cleaned
+on success and failure unless `--keep-temp` is passed. Retained artifacts contain no npm
+credentials. Results include the version/access and, for npmjs.org, the package settings
+link. Bootstrap does not automatically configure OIDC; run setup afterwards or use that link.
+
+| Bootstrap option              | Default  | Description                          |
+| ----------------------------- | -------- | ------------------------------------ |
+| `--initial-version <version>` | `0.0.0`  | Canonical semver placeholder version |
+| `--access <access>`           | `public` | `public` or `restricted`             |
+| `--keep-temp`                 | false    | Keep generated files for inspection  |
+| `--yes`                       | false    | Required to actually publish         |
+
+Node API: `bootstrapTrustedPublish(config, { version, access, keepTemp })` returns an exit
+code; `bootstrapTrustedPublishDetailed` returns a report. Resolve config with
+`command: 'bootstrap'`; claims and permissions are unnecessary. Publication runs serially
+so npm authentication prompts cannot overlap. JSON/silent mode suppresses npm output;
+provide credentials/OTP in advance in those modes.
 
 ## Package selection
 

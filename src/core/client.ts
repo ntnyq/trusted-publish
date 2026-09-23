@@ -1,5 +1,6 @@
 import {
   HTTP_AUTH_STATUSES,
+  HTTP_STATUS_NOT_FOUND,
   HTTP_EMPTY_BODY_STATUSES,
   HTTP_STATUS_SERVER_ERROR_MIN,
   HTTP_STATUS_TOO_MANY_REQUESTS,
@@ -129,6 +130,30 @@ export class NpmTrustClient {
     return this.request(this.packageTrustIdUrl(packageName, id), {
       method: 'DELETE',
     }) as Promise<Response>
+  }
+
+  /**
+   * Checks whether a package is visible in the registry.
+   * @param packageName - npm package name.
+   * @returns False only for HTTP 404; authentication/network errors propagate.
+   */
+  async packageExists(packageName: string): Promise<boolean> {
+    try {
+      await this.request(`${this.options.registry}/${encodeURIComponent(packageName)}`, {
+        method: 'GET',
+      })
+      return true
+    } catch (error) {
+      if (
+        error
+        && typeof error === 'object'
+        && 'statusCode' in error
+        && error.statusCode === HTTP_STATUS_NOT_FOUND
+      ) {
+        return false
+      }
+      throw error
+    }
   }
 
   private async request(url: string, init: RequestInit, asJson = false): Promise<unknown> {

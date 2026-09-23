@@ -1,10 +1,7 @@
 import { cac } from 'cac'
 import { name, version } from '../package.json'
 import { configureCliOptions } from './cli-options'
-import { runList } from './commands/list'
-import { runRevoke } from './commands/revoke'
-import { runSetup } from './commands/setup'
-import { runVerify } from './commands/verify'
+import { runBootstrap, runList, runRevoke, runSetup, runVerify } from './commands'
 import { authenticateInteractively } from './core/auth'
 import { loadTrustedPublishConfig } from './core/config'
 import type { CommandName, TrustedPublishConfig } from './core/types'
@@ -42,6 +39,20 @@ cli
   .action(async () => {
     const config = await loadCliConfig('plan')
     process.exitCode = await runSetup({ ...config, dryRun: true })
+  })
+
+cli
+  .command('bootstrap', 'publish an isolated placeholder for a new package')
+  .option('--initial-version <version>', 'placeholder version (default: 0.0.0)')
+  .option('--access <access>', 'public or restricted (default: public)')
+  .option('--keep-temp', 'retain the generated placeholder directory')
+  .action(async options => {
+    const config = await loadCliConfig('bootstrap')
+    process.exitCode = await runBootstrap(config, {
+      version: options.initialVersion,
+      access: options.access,
+      keepTemp: options.keepTemp,
+    })
   })
 
 cli.help()

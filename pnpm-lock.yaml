@@ -178,12 +178,18 @@ importers:
       consola:
         specifier: ^3.4.2
         version: 3.4.2
+      cross-spawn:
+        specifier: ^7.0.6
+        version: 7.0.6
       npm-profile:
         specifier: ^13.0.1
         version: 13.0.1
       open:
         specifier: ^11.0.4
         version: 11.0.4
+      semver:
+        specifier: ^7.8.5
+        version: 7.8.5
       tinyglobby:
         specifier: ^0.2.17
         version: 0.2.17
@@ -200,6 +206,9 @@ importers:
       '@ntnyq/tsconfig':
         specifier: ^3.1.0
         version: 3.1.0
+      '@types/cross-spawn':
+        specifier: ^6.0.6
+        version: 6.0.6
       '@types/node':
         specifier: ^26.6.2
         version: 26.6.2
@@ -209,6 +218,9 @@ importers:
       '@types/npmcli__config':
         specifier: ^6.0.4
         version: 6.0.4
+      '@types/semver':
+        specifier: ^7.8.0
+        version: 7.8.0
       '@types/validate-npm-package-name':
         specifier: ^4.0.2
         version: 4.0.2
@@ -835,6 +847,9 @@ packages:
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
+
+  '@types/cross-spawn@6.0.6':
+    resolution: {integrity: sha512-fXRhhUkG4H3TQk5dBhQ7m/JDdSNHKwR2BBia62lhwEIq9xGiQKLxd6LymNhn47SjXhsUEPmxi+PKw2OkW4LLjA==}
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
@@ -2858,6 +2873,10 @@ snapshots:
     dependencies:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
+
+  '@types/cross-spawn@6.0.6':
+    dependencies:
+      '@types/node': 26.6.2
 
   '@types/deep-eql@4.0.2': {}
 
